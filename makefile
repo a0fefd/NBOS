@@ -1,70 +1,74 @@
-CFLAGS?=-O2 -g
-CFLAGS:=$(CFLAGS) -Wall -Wextra
+AS       = i686-elf-as
+LD       = i686-elf-ld
+GCC      = i686-elf-gcc
 
-SOURCE_PATH				=src/
-BUILD_PATH				=build/
-KERNEL_SOURCE_PATH		=kernel/
-LIBC_SOURCE_PATH		=libc/
-BOOTLOADER_SOURCE_PATH	=bootloader/
-ISO_PATH				=$(BUILD_PATH)iso/
+CFLAGS   ?= -O2 -g
+CFLAGS   := $(CFLAGS) -Wall -Wextra -ffreestanding -std=gnu11
 
-# Automatically collect all kernel source files
-KERNEL_SOURCES=$(wildcard $(KERNEL_SOURCE_PATH)*.c)
-KERNEL_OBJECTS=$(patsubst $(KERNEL_SOURCE_PATH)%.c,$(BUILD_PATH)%.o,$(KERNEL_SOURCES))
+SOURCE_PATH        = src/
+BUILD_PATH         = build/
+KERNEL_SOURCE_PATH = kernel/
+LIBC_SOURCE_PATH   = libc/
+BOOT_SOURCE_PATH   = boot/
+ISO_PATH           = $(BUILD_PATH)iso/
 
-# Automatically collect all libc source files
-LIBC_SOURCES=$(wildcard $(LIBC_SOURCE_PATH)*.c $(LIBC_SOURCE_PATH)*/*.c)
-LIBC_OBJECTS=$(patsubst $(LIBC_SOURCE_PATH)%,$(BUILD_PATH)%,$(LIBC_SOURCES:.c=.o))
+BOOT_BIN   = $(BUILD_PATH)boot.bin
+LOADER_BIN = $(BUILD_PATH)loader.bin
+KERNEL_ELF = $(BUILD_PATH)kernel.elf
+KERNEL_BIN = $(BUILD_PATH)kernel.bin
+BOOT_IMG   = $(BUILD_PATH)boot.img
 
-BOOT_OBJECT=$(BUILD_PATH)boot.o
-OBJECTFILES=$(BOOT_OBJECT) $(LIBC_OBJECTS) $(KERNEL_OBJECTS)
+# Collect all sources
+KERNEL_SOURCES 	= $(wildcard $(KERNEL_SOURCE_PATH)*.c)
+LIBC_SOURCES   	= $(wildcard $(LIBC_SOURCE_PATH)*.c $(LIBC_SOURCE_PATH)*/*.c)
+BOOT_SOURCES	= $(BOOT_SOURCE_PATH)boot.s $(BOOT_SOURCE_PATH)loader.s
 
-GRUBFLAGS?=--directory=/usr/lib/grub/i386-pc --compress=gz --fonts=ascii --locales=en_AU
+KERNEL_OBJECTS 	= $(patsubst $(KERNEL_SOURCE_PATH)%.c,$(BUILD_PATH)%.o,$(KERNEL_SOURCES))
+LIBC_OBJECTS   	= $(patsubst $(LIBC_SOURCE_PATH)%,$(BUILD_PATH)%,$(LIBC_SOURCES:.c=.o))
+BOOT_OBJECTS   	= $(BUILD_PATH)boot.o $(BUILD_PATH)loader.o
+OBJECTFILES    	= $(BOOT_OBJECTS) $(LIBC_OBJECTS) $(KERNEL_OBJECTS)
 
-main:
-	make clean			# Clean up build files
-	make buildall 		# Build kernel
-	make buildiso		# Build cdrom
-	make cleanobjects	# Clean object files
-	clear
-	make runiso			# Load up the cdrom into QEMU i368 emulator
-	clear
+KERNEL_LINKER 	= $(SOURCE_PATH)linker_kernel.ld
 
-buildall: $(BOOTLOADER_SOURCE_PATH)boot.s $(KERNEL_SOURCE_PATH)kernel.c $(SOURCE_PATH)linker.ld
-	mkdir -p $(BUILD_PATH) $(BUILD_PATH)/stdio
+GRUBFLAGS ?= --directory=/usr/lib/grub/i386-pc --compress=gz --fonts=ascii --locales=en_AU
 
-	# Assemble boot.s 
-	i686-elf-as $(BOOTLOADER_SOURCE_PATH)boot.s -o $(BUILD_PATH)boot.o
+all: clean compilec buildboot run
 
+# Compilation
+compilec:
+	mkdir -p $(BUILD_PATH) $(BUILD_PATH)stdio
+	mkdir -p $(BUILD_PATH) $(BUILD_PATH)bin
+	
 	# Compile libc source
 	$(foreach src,$(LIBC_SOURCES), \
-		i686-elf-gcc -c $(src) -o $(patsubst $(LIBC_SOURCE_PATH)%,$(BUILD_PATH)%,$(src:.c=.o)) -std=gnu11 -ffreestanding $(CFLAGS);)
+		$(GCC) -c $(src) -o $(patsubst $(LIBC_SOURCE_PATH)%,$(BUILD_PATH)%,$(src:.c=.o)) -std=gnu11 -ffreestanding $(CFLAGS);)
 
 	# Compile c source
 	$(foreach src,$(KERNEL_SOURCES), \
-		i686-elf-gcc -c $(src) -o $(BUILD_PATH)$(notdir $(src:.c=.o)) -std=gnu11 -ffreestanding $(CFLAGS);)
+		$(GCC) -c $(src) -o $(BUILD_PATH)$(notdir $(src:.c=.o)) -std=gnu11 -ffreestanding $(CFLAGS);)
 
-	# Link program into os.bin
-	i686-elf-gcc -T $(SOURCE_PATH)linker.ld -o $(BUILD_PATH)os.bin -ffreestanding -O2 -nostdlib $(OBJECTFILES)
+	$(AS) $(BOOT_SOURCE_PATH)test.s -o $(BUILD_PATH)test.o
+	$(GCC) -T $(SOURCE_PATH)linker_kernel.ld -o $(BUILD_PATH)bin/kernel.bin -ffreestanding -O2 -nostdlib $(BUILD_PATH)test.o $(LIBC_OBJECTS) $(KERNEL_OBJECTS)
 
-buildiso: cleanobjects
-	mkdir -p $(ISO_PATH)
+# Assembly
+buildboot:
 
-	mkdir -p $(ISO_PATH)boot/grub
-	cp $(BUILD_PATH)os.bin $(ISO_PATH)boot/os.bin
-	cp $(SOURCE_PATH)grub.cfg $(ISO_PATH)boot/grub/grub.cfg
-	grub-mkrescue $(GRUBFLAGS) -o os.iso $(ISO_PATH)
+	# Assemble boot
+	$(AS) $(BOOT_SOURCE_PATH)boot.s -o $(BUILD_PATH)boot.o
+	$(AS) $(BOOT_SOURCE_PATH)loader.s -o $(BUILD_PATH)loader.o
 
-run: $(BUILD_PATH)os.bin
-	qemu-system-i386 -kernel $(BUILD_PATH)os.bin
+# 	$(LD) -T $(SOURCE_PATH)linker_bootloader.ld --oformat binary $(BUILD_PATH)boot.o -o boot.bin
+	$(LD) -T $(SOURCE_PATH)linker_bootloader.ld $(BOOT_OBJECTS) -o $(BUILD_PATH)bin/boot.bin
 
-runiso:
-	qemu-system-i386 -cdrom os.iso
 
-clean: cleanobjects
-	rm -fr $(BUILD_PATH)*
+# Run
+run:
+# 	qemu-system-i386 -boot a -drive format=raw,file=$< -serial stdio
+	qemu-system-i386 -drive format=raw,file=boot.bin
+
+# Cleanup
+clean:
+	rm -rf $(BUILD_PATH)* *.iso
 
 cleanobjects:
-	rm -f $(BUILD_PATH)*.o
-	rm -f $(BUILD_PATH)*/*.o
-	rm -f $(BUILD_PATH)*/*/*.o
+	rm -f $(BUILD_PATH)*.o $(BUILD_PATH)*/*.o
