@@ -18,9 +18,9 @@ stack_bottom:
 stack_top:
 
 .section .text
-.global _start
-.type _start, @function
-_start:
+.global kernel
+.type kernel, @function
+kernel:
 	mov $stack_top, %esp
 
 	call kernel_main
@@ -29,4 +29,4 @@ _start:
 1:	hlt
 	jmp 1b
 
-.size _start, . - _start
+.size kernel, . - kernel

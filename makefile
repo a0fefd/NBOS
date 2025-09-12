@@ -25,20 +25,20 @@ BOOT_SOURCES	= $(BOOT_SOURCE_PATH)boot.s $(BOOT_SOURCE_PATH)loader.s
 
 KERNEL_OBJECTS 	= $(patsubst $(KERNEL_SOURCE_PATH)%.c,$(BUILD_PATH)%.o,$(KERNEL_SOURCES))
 LIBC_OBJECTS   	= $(patsubst $(LIBC_SOURCE_PATH)%,$(BUILD_PATH)%,$(LIBC_SOURCES:.c=.o))
-BOOT_OBJECTS   	= $(BUILD_PATH)boot.o $(BUILD_PATH)loader.o
+BOOT_OBJECTS   	= $(BUILD_PATH)boot.o
 OBJECTFILES    	= $(BOOT_OBJECTS) $(LIBC_OBJECTS) $(KERNEL_OBJECTS)
 
 KERNEL_LINKER 	= $(SOURCE_PATH)linker_kernel.ld
 
-GRUBFLAGS ?= --directory=/usr/lib/grub/i386-pc --compress=gz --fonts=ascii --locales=en_AU
+# GRUBFLAGS ?= --directory=/usr/lib/grub/i386-pc --compress=gz --fonts=ascii --locales=en_AU
 
-all: clean compilec buildboot run
+all: clean compilekernel buildboot makefloppy
 
 # Compilation
-compilec:
+compilekernel:
 	mkdir -p $(BUILD_PATH) $(BUILD_PATH)stdio
 	mkdir -p $(BUILD_PATH) $(BUILD_PATH)bin
-	
+
 	# Compile libc source
 	$(foreach src,$(LIBC_SOURCES), \
 		$(GCC) -c $(src) -o $(patsubst $(LIBC_SOURCE_PATH)%,$(BUILD_PATH)%,$(src:.c=.o)) -std=gnu11 -ffreestanding $(CFLAGS);)
@@ -47,24 +47,36 @@ compilec:
 	$(foreach src,$(KERNEL_SOURCES), \
 		$(GCC) -c $(src) -o $(BUILD_PATH)$(notdir $(src:.c=.o)) -std=gnu11 -ffreestanding $(CFLAGS);)
 
-	$(AS) $(BOOT_SOURCE_PATH)test.s -o $(BUILD_PATH)test.o
-	$(GCC) -T $(SOURCE_PATH)linker_kernel.ld -o $(BUILD_PATH)bin/kernel.bin -ffreestanding -O2 -nostdlib $(BUILD_PATH)test.o $(LIBC_OBJECTS) $(KERNEL_OBJECTS)
+	$(AS) $(BOOT_SOURCE_PATH)low_kernel.s -o $(BUILD_PATH)low_kernel.o
+
+	$(GCC) -T $(SOURCE_PATH)linker_kernel.ld -o $(BUILD_PATH)bin/kernel.bin -ffreestanding -O2 -nostdlib $(BUILD_PATH)low_kernel.o $(LIBC_OBJECTS) $(KERNEL_OBJECTS)
 
 # Assembly
 buildboot:
 
 	# Assemble boot
 	$(AS) $(BOOT_SOURCE_PATH)boot.s -o $(BUILD_PATH)boot.o
-	$(AS) $(BOOT_SOURCE_PATH)loader.s -o $(BUILD_PATH)loader.o
+	
+	$(LD) -T $(SOURCE_PATH)linker_bootloader.ld --oformat binary $(BUILD_PATH)boot.o -o $(BUILD_PATH)bin/boot.bin
 
-# 	$(LD) -T $(SOURCE_PATH)linker_bootloader.ld --oformat binary $(BUILD_PATH)boot.o -o boot.bin
-	$(LD) -T $(SOURCE_PATH)linker_bootloader.ld $(BOOT_OBJECTS) -o $(BUILD_PATH)bin/boot.bin
 
+makefloppy:
+	dd if=/dev/zero of=$(BUILD_PATH)floppy.img bs=512 count=2880
+	mkfs.fat -F 12 -n "NBOS" $(BUILD_PATH)floppy.img
+	dd if=$(BUILD_PATH)bin/boot.bin of=$(BUILD_PATH)floppy.img conv=notrunc
+
+	mcopy -i $(BUILD_PATH)floppy.img $(BUILD_PATH)bin/kernel.bin "::kernel.bin"
+
+# 	truncate -s 1440k $(BUILD_PATH)floppy.img
 
 # Run
 run:
 # 	qemu-system-i386 -boot a -drive format=raw,file=$< -serial stdio
-	qemu-system-i386 -drive format=raw,file=boot.bin
+# 	qemu-system-i386 -drive format=raw,file=$(BUILD_PATH)bin/boot.bin
+	qemu-system-i386 -drive format=raw,file=$(BUILD_PATH)floppy.img
+
+debug:
+	bochs -q -f bochs_config
 
 # Cleanup
 clean:

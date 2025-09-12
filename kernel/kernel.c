@@ -11,7 +11,7 @@ void kernel_main(void)
     /* Initialise terminal interface */
     terminal_initialise();
 
-    const char string[] = "John's OS\n\nMake Sure to SDIYBT :peace:\n";
+    const char string[] = "John's OS\n\nMake Sure to SDIYBT\n";
     size_t string_length = strlen(string);
 
     VGA_COLOUR starting_col = VGA_COLOUR_LIGHT_BLUE;

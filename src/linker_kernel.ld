@@ -1,7 +1,8 @@
-ENTRY(_start)
+ENTRY(kernel)
 
 SECTIONS
 {
+	/* location in memory */
     . = 2M;
 
     .text BLOCK(4K) : ALIGN(4K)
