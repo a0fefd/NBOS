@@ -16,7 +16,7 @@ BOOT_BIN   = $(BUILD_PATH)boot.bin
 LOADER_BIN = $(BUILD_PATH)loader.bin
 KERNEL_ELF = $(BUILD_PATH)kernel.elf
 KERNEL_BIN = $(BUILD_PATH)kernel.bin
-BOOT_IMG   = $(BUILD_PATH)boot.img
+FLOPPY     = $(BUILD_PATH)floppy.iso
 
 # Collect all sources
 KERNEL_SOURCES 	= $(wildcard $(KERNEL_SOURCE_PATH)*.c)
@@ -49,7 +49,9 @@ compilekernel:
 
 	$(AS) $(BOOT_SOURCE_PATH)low_kernel.s -o $(BUILD_PATH)low_kernel.o
 
-	$(GCC) -T $(SOURCE_PATH)linker_kernel.ld -o $(BUILD_PATH)bin/kernel.bin -ffreestanding -O2 -nostdlib $(BUILD_PATH)low_kernel.o $(LIBC_OBJECTS) $(KERNEL_OBJECTS)
+# 	$(GCC) -T $(SOURCE_PATH)linker_kernel.ld -o $(BUILD_PATH)bin/kernel.bin -ffreestanding -O2 -nostdlib $(BUILD_PATH)low_kernel.o $(LIBC_OBJECTS) $(KERNEL_OBJECTS)
+	$(LD) -Ttext=0x0 --oformat binary $(BUILD_PATH)low_kernel.o -o $(BUILD_PATH)bin/kernel.bin
+# 	$(GCC) -o $(BUILD_PATH)bin/kernel.bin -ffreestanding -O2 -nostdlib $(BUILD_PATH)low_kernel.o $(LIBC_OBJECTS) $(KERNEL_OBJECTS)
 
 # Assembly
 buildboot:
@@ -57,23 +59,26 @@ buildboot:
 	# Assemble boot
 	$(AS) $(BOOT_SOURCE_PATH)boot.s -o $(BUILD_PATH)boot.o
 	
-	$(LD) -T $(SOURCE_PATH)linker_bootloader.ld --oformat binary $(BUILD_PATH)boot.o -o $(BUILD_PATH)bin/boot.bin
+# 	$(LD) -T$(SOURCE_PATH)linker_bootloader.ld --oformat binary $(BUILD_PATH)boot.o -o $(BUILD_PATH)bin/boot.bin
+	$(LD) -Ttext=0x7c00 --oformat binary $(BUILD_PATH)boot.o -o $(BUILD_PATH)bin/boot.bin
+# 	$(LD) --oformat binary $(BUILD_PATH)boot.o -o $(BUILD_PATH)bin/boot.bin
 
 
 makefloppy:
-	dd if=/dev/zero of=$(BUILD_PATH)floppy.img bs=512 count=2880
-	mkfs.fat -F 12 -n "NBOS" $(BUILD_PATH)floppy.img
-	dd if=$(BUILD_PATH)bin/boot.bin of=$(BUILD_PATH)floppy.img conv=notrunc
+	dd if=/dev/zero of=$(FLOPPY) bs=512 count=2880
+	mkfs.fat -F 12 -n "NBOS" $(FLOPPY)
+	dd if=$(BUILD_PATH)bin/boot.bin of=$(FLOPPY) conv=notrunc
 
-	mcopy -i $(BUILD_PATH)floppy.img $(BUILD_PATH)bin/kernel.bin "::kernel.bin"
+	mcopy -i $(FLOPPY) $(BUILD_PATH)bin/kernel.bin "::kernel.bin"
 
-# 	truncate -s 1440k $(BUILD_PATH)floppy.img
+# 	truncate -s 1440k $(FLOPPY)
 
 # Run
 run:
 # 	qemu-system-i386 -boot a -drive format=raw,file=$< -serial stdio
 # 	qemu-system-i386 -drive format=raw,file=$(BUILD_PATH)bin/boot.bin
-	qemu-system-i386 -drive format=raw,file=$(BUILD_PATH)floppy.img
+	qemu-system-i386 -drive format=raw,file=$(FLOPPY)
+# 	qemu-system-i386 -hda $(FLOPPY)
 
 debug:
 	bochs -q -f bochs_config

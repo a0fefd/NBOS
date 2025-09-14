@@ -1,32 +1,33 @@
-/* Declare constants for the multiboot header. */
-.set ALIGN,    1<<0             /* align loaded modules on page boundaries */
-.set MEMINFO,  1<<1             /* provide memory map */
-.set FLAGS,    ALIGN | MEMINFO  /* this is the Multiboot 'flag' field */
-.set MAGIC,    0x1BADB002       /* 'magic number' lets bootloader find the header */
-.set CHECKSUM, -(MAGIC + FLAGS) /* checksum of above, to prove we are multiboot */
+.code16
 
-.section .multiboot
-.align 4
-.long MAGIC
-.long FLAGS
-.long CHECKSUM
+.global _start
+_start:
+    sti
 
-.section .bss
-.align 16
-stack_bottom:
-.skip 16384 # 16 KiB
-stack_top:
-
-.section .text
-.global kernel
-.type kernel, @function
-kernel:
-	mov $stack_top, %esp
-
-	call kernel_main
+	movw $welcome_message, %si
+	call puts
 	
 	cli
-1:	hlt
-	jmp 1b
+    hlt
 
-.size kernel, . - kernel
+// .size kernel, . - kernel
+
+puts:
+    pushw %si
+    pushw %ax
+    pushw %bx
+.puts_loop:
+    lodsb
+    orb %al, %al
+    jz .puts_done
+    movb $0x0E, %ah
+    movb $0x00, %bh
+    int $0x10
+    jmp .puts_loop
+.puts_done:
+    popw %bx
+    popw %ax
+    popw %si
+    ret
+
+welcome_message:    .ascii "Welcome to NBOS Kernel!\15\12\0"

@@ -1,32 +1,21 @@
-ENTRY(kernel)
+/* OUTPUT_FORMAT(elf32-i386) */
+/* ENTRY(_start) */
 
 SECTIONS
 {
-	/* location in memory */
-    . = 2M;
+    . = 0x0;
 
-    .text BLOCK(4K) : ALIGN(4K)
-	{
-		*(.multiboot)
-		*(.text)
-	}
+    .text : {
+        *(.text)
+        *(.text.*)
+    }
 
-	/* Read-only data. */
-	.rodata BLOCK(4K) : ALIGN(4K)
-	{
-		*(.rodata)
-	}
+    .rodata : { *(.rodata) }
 
-	/* Read-write data (initialized) */
-	.data BLOCK(4K) : ALIGN(4K)
-	{
-		*(.data)
-	}
+    .data : { *(.data) }
 
-	/* Read-write data (uninitialized) and stack */
-	.bss BLOCK(4K) : ALIGN(4K)
-	{
-		*(COMMON)
-		*(.bss)
-	}
+    .bss : {
+        *(COMMON)
+        *(.bss)
+    }
 }
