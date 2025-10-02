@@ -14,7 +14,6 @@ ISO_PATH           = $(BUILD_PATH)iso/
 
 BOOT_BIN   = $(BUILD_PATH)boot.bin
 LOADER_BIN = $(BUILD_PATH)loader.bin
-KERNEL_ELF = $(BUILD_PATH)kernel.elf
 KERNEL_BIN = $(BUILD_PATH)kernel.bin
 FLOPPY     = $(BUILD_PATH)floppy.iso
 
@@ -47,21 +46,19 @@ compilekernel:
 	$(foreach src,$(KERNEL_SOURCES), \
 		$(GCC) -c $(src) -o $(BUILD_PATH)$(notdir $(src:.c=.o)) -std=gnu11 -ffreestanding $(CFLAGS);)
 
-	$(AS) $(BOOT_SOURCE_PATH)low_kernel.s -o $(BUILD_PATH)low_kernel.o
-
-# 	$(GCC) -T $(SOURCE_PATH)linker_kernel.ld -o $(BUILD_PATH)bin/kernel.bin -ffreestanding -O2 -nostdlib $(BUILD_PATH)low_kernel.o $(LIBC_OBJECTS) $(KERNEL_OBJECTS)
-	$(LD) -Ttext=0x0 --oformat binary $(BUILD_PATH)low_kernel.o -o $(BUILD_PATH)bin/kernel.bin
-# 	$(GCC) -o $(BUILD_PATH)bin/kernel.bin -ffreestanding -O2 -nostdlib $(BUILD_PATH)low_kernel.o $(LIBC_OBJECTS) $(KERNEL_OBJECTS)
+	nasm $(BOOT_SOURCE_PATH)low_kernel.s -f bin -o $(BUILD_PATH)bin/kernel.bin
 
 # Assembly
 buildboot:
 
-	# Assemble boot
-	$(AS) $(BOOT_SOURCE_PATH)boot.s -o $(BUILD_PATH)boot.o
+# 	# Assemble boot
+# 	$(AS) $(BOOT_SOURCE_PATH)boot.s -o $(BUILD_PATH)boot.o
 	
-# 	$(LD) -T$(SOURCE_PATH)linker_bootloader.ld --oformat binary $(BUILD_PATH)boot.o -o $(BUILD_PATH)bin/boot.bin
-	$(LD) -Ttext=0x7c00 --oformat binary $(BUILD_PATH)boot.o -o $(BUILD_PATH)bin/boot.bin
-# 	$(LD) --oformat binary $(BUILD_PATH)boot.o -o $(BUILD_PATH)bin/boot.bin
+# # 	$(LD) -T$(SOURCE_PATH)linker_bootloader.ld --oformat binary $(BUILD_PATH)boot.o -o $(BUILD_PATH)bin/boot.bin
+# 	$(LD) -Ttext=0x7c00 --oformat binary $(BUILD_PATH)boot.o -o $(BUILD_PATH)bin/boot.bin
+# # 	$(LD) --oformat binary $(BUILD_PATH)boot.o -o $(BUILD_PATH)bin/boot.bin
+
+	nasm $(BOOT_SOURCE_PATH)boot.s -f bin -o $(BUILD_PATH)bin/boot.bin
 
 
 makefloppy:
@@ -70,6 +67,7 @@ makefloppy:
 	dd if=$(BUILD_PATH)bin/boot.bin of=$(FLOPPY) conv=notrunc
 
 	mcopy -i $(FLOPPY) $(BUILD_PATH)bin/kernel.bin "::kernel.bin"
+# 	mcopy -i $(FLOPPY) $(BUILD_PATH)bin/kernel.bin ::KERNEL.BIN
 
 # 	truncate -s 1440k $(FLOPPY)
 

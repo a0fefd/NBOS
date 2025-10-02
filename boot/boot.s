@@ -1,269 +1,262 @@
-.code16
+org 0x7c00
+bits 16
 
+%define endl 0xd, 0xa
 
-.align 16
-.global _start
-
-# ================================
-# --- BIOS Parameter Block (BPB) ---
-# ================================
-
-jmp _start
+jmp short _start
 nop
 
-bdb_oem:                    .ascii "MSWIN4.1"
-bdb_bytes_per_sector:       .word 512
-bdb_sectors_per_cluster:    .byte 1
-bdb_reserved_sectors:       .word 1
-bdb_fat_count:              .byte 2
-bdb_dir_entries_count:      .word 0x0E0
-bdb_total_sectors:          .word 2880
-bdb_media_descriptor_type:  .byte 0xF0
-bdb_sectors_per_fat:        .word 9
-bdb_sectors_per_track:      .word 18
-bdb_heads:                  .word 2
-bdb_hidden_sectors:         .long 0
-bdb_large_sector_count:     .long 0
+bdb_oem:                    db "MSWIN4.1"
+bdb_bytes_per_sector:       dw 512
+bdb_sectors_per_cluster:    db 1
+bdb_reserved_sectors:       dw 1
+bdb_fat_count:              db 2
+bdb_dir_entries_count:      dw 0x0E0
+bdb_total_sectors:          dw 2880
+bdb_media_descriptor_type:  db 0xF0
+bdb_sectors_per_fat:        dw 9
+bdb_sectors_per_track:      dw 18
+bdb_heads:                  dw 2
+bdb_hidden_sectors:         dd 0
+bdb_large_sector_count:     dd 0
 
-# --- Extended Boot Record (EBR) ---
-ebr_drive_number:           .byte 0
-ebr_reserved:               .byte 0
-ebr_signature:              .byte 0x29
-ebr_volume_id:              .byte 0x12,0x34,0x56,0x78
-ebr_volume_label:           .ascii "NBOS       "
-ebr_volume_label_pad:       .byte 0
-ebr_system_id:              .ascii "FAT12   "
+; Extended Boot Record (EBR)
+ebr_drive_number:           db 0
+ebr_reserved:               db 0
+ebr_signature:              db 0x29
+ebr_volume_id:              dd 0x12345678
+ebr_volume_label:           db "NBOS       "
+ebr_volume_label_pad:       db 0
+ebr_system_id:              db "FAT12   "
 
 _start:
-    cli
-    xorw %ax, %ax
-    movw %ax, %ds
-    movw %ax, %es
+    mov ax, 0
+    mov ds, ax
+    mov es, ax
+    mov ss, ax
+    mov sp, 0x7c00
 
-    movw %ax, %ss
-    movw $0x7c00, %sp
-    sti
-
-    # save boot drive
-    movb %dl, ebr_drive_number
-
-    pushw %es
-    pushw $after
+    push es
+    push word .0
     retf
 
-after:
-    movw $msg_loading, %si
+.0:
+    mov [ebr_drive_number], dl
+
+    mov si, msg_load
     call puts
 
-    # lba of root = reserved + fatcount*sectorsperfat
-    #             = 0 + 2*9
-    #             = 18
-    # size of root = 32*numberofentries/bytespersector
-    #              = 32*0xe0 / 512
-    #              = 0xe0 / 16
-    #              = 0xe0 >> 4
-    movb bdb_dir_entries_count, %cl
-    shrb $4, %cl
+    push es
+    mov ah, 08h
+    int 0x13
+    jc disk_err
+    pop es
 
-    # read root
-    // movb %al, %cl
-    // popw %ax
-    movw $18, %ax
-    // movw $ebr_drive_number, %dx
-    movw $BUFFER_SEG, %bx
-    movw %bx, %es
-    xorw %bx, %bx
+    and cl, 0x3f
+    xor ch, ch
+    mov [bdb_sectors_per_track], cx
+
+    inc dh
+    mov [bdb_heads], dh
+
+    mov ax, 19
+    push ax
+    
+    mov ax, [bdb_dir_entries_count]
+    shl ax, 5
+    xor dx, dx
+    div word [bdb_bytes_per_sector]
+
+    test dx, dx
+    jz .root_dir_after
+    inc ax
+
+.root_dir_after:
+    mov cl, al
+    pop ax
+    mov dl, [ebr_drive_number]
+    mov bx, buffer
     call disk_read
 
-    movw $BUFFER_SEG, %di
+    xor bx, bx
+    mov di, buffer
 
-_sk:# search for kernel
-    movw $file_kernel_bin, %si
-    movw $11, %cx
-    push %di
+.find_kernel:
+    mov si, kernel_file_name
+    mov cx, 11
+    push di
     repe cmpsb
-    pop %di
-    // je +8 # found kernel
-    je _fk
+    pop di
+    je .found_kernel
 
-    addw $32, %di
-    incw %bx
-    cmpw bdb_dir_entries_count, %bx
-    jl _sk
+    add di, 32
+    inc bx
+    cmp bx, [bdb_dir_entries_count]
+    jl .find_kernel
 
-    # kernel not found
-    movw $msg_kernel_not_found, %si
-    call puts
+    jmp kernel_nfound_err
+.found_kernel:
+    mov ax, [di + 26]
+    mov [kernel_clust], ax
+
+    mov ax, [bdb_reserved_sectors]
+    mov bx, buffer
+    mov cl, [bdb_sectors_per_fat]
+    mov dl, [ebr_drive_number]
+    call disk_read
+
+    mov bx, KERNEL_LOAD_SEGM
+    mov es, bx
+    mov bx, KERNEL_LOAD_OFFS
+.load_kernel_loop:
+    mov ax, [kernel_clust]
+    add ax, 31
+    mov cl, 1
+    mov dl, [ebr_drive_number]
+    call disk_read
+
+    add bx, [bdb_bytes_per_sector]
+    mov ax, [kernel_clust]
+    mov cx, 3
+    mul cx
+    mov cx, 2
+    div cx
+
+    mov si, buffer
+    add si, ax
+    mov ax, [ds:si]
+
+    or dx, dx
+    jz .even
+.odd:
+    shr ax, 4
+    jmp .next_clust_after
+.even:
+    and ax, 0xfff
+.next_clust_after:
+    cmp ax, 0xff8
+    jae .read_finished
+    mov [kernel_clust], ax
+    jmp .load_kernel_loop
+.read_finished:
+
+    mov dl, [ebr_drive_number]
+
+    mov ax, KERNEL_LOAD_SEGM
+    mov ds, ax
+    mov es, ax
+
+    jmp KERNEL_LOAD_SEGM:KERNEL_LOAD_OFFS
+
     jmp hang
 
-_fk:# found kernel
-    movw 26(%di,1), %ax
-    movw %ax, kernel_cluster
+lba_to_chs:
+    push ax
+    push dx
 
-    # load fat from disk into mem
-    movw bdb_reserved_sectors, %ax
-    movw $BUFFER_SEG, %bx
-    movb bdb_sectors_per_fat, %cl
-    movb ebr_drive_number, %dl
-    call disk_read
+    xor dx, dx
+    div word [bdb_sectors_per_track]
 
-    movw KERNEL_LOAD_SEG, %bx
-    movw %bx, %es
-    xorw %bx, %bx
+    inc dx
+    mov cx, dx
 
-_lk:# load kernel loop
+    xor dx, dx
+    div word [bdb_heads]
 
-    # read next cluster
-    movw kernel_cluster, %ax
-    add $31, %ax
+    mov dh, dl
+    mov ch, al
+    shl ah, 6
+    or cl, ah
 
-    movb $1, %cl
-    movb ebr_drive_number, %dl
-    call disk_read
-
-    addw bdb_bytes_per_sector, %bx
-
-    # compute loc of next cluster
-    movw $kernel_cluster, %ax
-    movw $3, %cx
-    mulw %cx
-    movw $2, %cx
-    divw %cx
-
-    movw $BUFFER_SEG, %si
-    addw %ax, %si
-    movw %ds:(%si), %ax
-
-    orw %dx, %dx
-    jz .even
-
-.odd:
-    shr $4, %ax
-    jmp .next_cluster
-
-.even:
-    andw $0x0FFF, %ax
-
-.next_cluster:
-    cmpw $0x0FF8, %ax
-    jae .read_finish
-
-    mov %ax, kernel_cluster
-    jmp _lk
-
-.read_finish:
-    movb ebr_drive_number, %dl
-
-to_kernel:
-    movw $KERNEL_LOAD_SEG, %ax
-    movw %ax, %es
-    xorw %bx, %bx
-
-    ljmp $KERNEL_LOAD_SEG, $KERNEL_LOAD_OFS
-
-hang:
-    cli
-.hlt:
-    hlt
-    jmp .hlt
-
-
-# --------------------------------
-# Print zero-terminated string at DS:SI
-# --------------------------------
-puts:
-    pushw %si
-    pushw %ax
-    pushw %bx
-.puts_loop:
-    lodsb
-    orb %al, %al
-    jz .puts_done
-    movb $0x0E, %ah
-    movb $0x00, %bh
-    int $0x10
-    jmp .puts_loop
-.puts_done:
-    popw %bx
-    popw %ax
-    popw %si
+    pop ax
+    mov dl, al
+    pop ax
     ret
 
-# --------------------------------
-# disk_read
-# in: AX = LBA, ES:BX = buffer, CL = sector count, DL = drive
-# --------------------------------
 disk_read:
     pusha
-    pushw %ds
+    push cx
+    
+    call lba_to_chs
+    pop ax
 
-    # convert LBA in AX → CHS
-    pushw %ax
-    call lba_to_chs         # CH=cyl, DH=head, CL=sector
-    popw %ax                # restore LBA in AX (not needed further)
+    mov ah, 0x2
+    mov di, 3
+.retry:
+    pusha
+    stc
+    int 0x13
+    jnc .done
 
-    movb $0x02, %ah         # BIOS read
-    movb $1, %al            # read 1 sector (for simplicity)
-    int $0x13
-    jc disk_error
+    popa
+    call disk_reset
 
-    popw %ds
+    dec di
+    test di, di
+    jnz .retry
+.fail:
+    jmp disk_err
+.done:
+    popa
+    popa
+
+    ret
+
+disk_reset:
+    pusha
+    mov ah, 0
+    stc
+    int 0x13
+    jc disk_err
     popa
     ret
 
-disk_error:
-    movw $msg_read_failed, %si
+disk_err:
+    mov si, msg_read_fail
     call puts
     jmp hang
 
-# --------------------------------
-# Convert LBA (AX) to CHS (CH,CL,DH)
-# --------------------------------
-lba_to_chs:
-    xorw %dx, %dx
-    divw bdb_sectors_per_track   # AX / SPT
-    movw %dx, %cx                # remainder
-    incb %cl                     # sector = remainder + 1
+kernel_nfound_err:
+    mov si, msg_kernel_nfound
+    call puts
+    jmp hang
 
-    xorw %dx, %dx
-    divw bdb_heads               # AX / heads
-    movb %dl, %dh                # head = remainder
-    movb %al, %ch                # cylinder low 8 bits
+hang:
+    cli
+    hlt
+    jmp $-2
 
-    # put high 2 bits of cylinder into CL bits 6..7
-    shrw $8, %ax
-    andb $0x03, %al
-    shlb $6, %al
-    orb  %al, %cl
+puts:
+    push si
+    push ax
+    push bx
+.loop:
+    lodsb
+    or al, al
+    jz .done
 
+    mov ah, 0xe
+    mov bh, 0
+    int 0x10
+    
+    jmp .loop
+.done:
+    pop bx
+    pop ax
+    pop si
     ret
 
+msg_load: db "Loading...", endl, 0
+msg_read_fail: db "Read failed.", endl, 0
+msg_kernel_nfound: db "KERNEL NOT FOUND", endl, 0
+kernel_file_name: db "KERNEL  BIN"
+kernel_clust: dw 0
 
-# ================================
-# --- Strings / Variables ---
-# ================================
+KERNEL_LOAD_SEGM equ 0x2000
+KERNEL_LOAD_OFFS equ 0
 
-# \15: carrige return   0xD (\r)
-# \12: newline          0xA (\n)
+times 510 - ($-$$) db 0
 
-msg_loading:                .ascii "Loading...\15\12\0" 
-                            // .byte 0
-msg_read_failed:            .ascii "Disk read failed!\15\12\0"
-msg_kernel_not_found:       .ascii "KERNEL.BIN not found!\15\12\0"
-file_kernel_bin:            .ascii "KERNEL  BIN"
+dw 0xAA55
 
-kernel_cluster:             .word 0
-
-# ================================
-# --- Constants ---
-# ================================
-    .equ KERNEL_LOAD_SEG, 0x2000
-    .equ KERNEL_LOAD_OFS, 0x0000
-    .equ BUFFER_SEG, 0x7e0        # temp buffer at 0000:0x7e00 / 0x07e0:0000
-
-
-# ================================
-# --- Boot Signature ---
-# ================================
-    .org 510
-    .word 0xAA55
+buffer:
