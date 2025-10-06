@@ -1,3 +1,5 @@
+[section .text]
+
 [bits 32]
 
 global _start
@@ -9,7 +11,12 @@ _start:
 
     call kernel_main
 
-.hang
+
+;
+; functions
+;
+
+hang:
     cli
     hlt
-    jmp .hang
+    jmp hang

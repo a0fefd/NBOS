@@ -181,7 +181,7 @@ load_kernel:
     or al, 1
     mov cr0, eax
 
-    jmp CODE_SEG:protected_start
+    jmp CODE_SEG:unreal_start
 
 .hang:
     cli
@@ -208,7 +208,7 @@ clrscr:
     rep stosw
     ret
 
-protected_start:
+unreal_start:
     mov ax, DATA_SEG
     mov ds, ax
     mov es, ax

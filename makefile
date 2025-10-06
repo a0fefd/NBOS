@@ -14,12 +14,13 @@ LIBC_SOURCE_PATH   = libc/
 BOOT_SOURCE_PATH   = boot/
 ISO_PATH           = $(BUILD_PATH)iso/
 
-BOOT_BIN   = $(BUILD_PATH)bin/boot.bin
-BOOT2_BIN   = $(BUILD_PATH)bin/boot2.bin
-LOADER_BIN = $(BUILD_PATH)loader.bin
-KERNEL_BIN = $(BUILD_PATH)bin/kernel.bin
-KERNEL_ELF = $(BUILD_PATH)kernel.elf
-FLOPPY     = $(BUILD_PATH)floppy.iso
+BOOT_BIN  		= $(BUILD_PATH)bin/boot.bin
+BOOT2_BIN  		= $(BUILD_PATH)bin/boot2.bin
+LOADER_BIN 		= $(BUILD_PATH)loader.bin
+KERNEL_BIN 		= $(BUILD_PATH)bin/kernel.bin
+KERNEL_ELF		= $(BUILD_PATH)kernel.elf
+FLOPPY     		= $(BUILD_PATH)floppy.iso
+EXPORT_DRIVE 	= floppydrive_NBOS
 
 # Collect all sources
 KERNEL_SOURCES 	= $(wildcard $(KERNEL_SOURCE_PATH)*.c)
@@ -33,7 +34,8 @@ OBJECTFILES    	= $(BOOT_OBJECTS) $(LIBC_OBJECTS) $(KERNEL_OBJECTS)
 
 KERNEL_LINKER 	= $(SOURCE_PATH)linker_kernel.ld
 
-all: clean compilekernel buildboot makefloppy
+all: clean compilekernel buildboot makefloppy finished
+	make clean
 
 # Compilation
 compilekernel:
@@ -69,14 +71,23 @@ makefloppy:
 	mcopy -i $(FLOPPY) $(BUILD_PATH)bin/kernel.bin "::kernel.bin"
 	truncate -s 1440k $(FLOPPY)
 
+finished:
+	cp $(FLOPPY) $(EXPORT_DRIVE)
+
 # Run
 run:
-	qemu-system-i386 -drive format=raw,file=$(FLOPPY) -no-reboot
-# 	qemu-system-i386 -drive format=raw,file=$(FLOPPY)
+	qemu-system-i386 -drive format=raw,file=$(EXPORT_DRIVE) -no-reboot -serial stdio
 
 # Cleanup
-clean:
+clean: cleanbinaries
 	rm -rf $(BUILD_PATH)* *.iso
 
 cleanobjects:
-	rm -f $(BUILD_PATH)*.o $(BUILD_PATH)*/*.o
+	find -maxdepth 16 -name "*.o" | xargs rm -f
+
+cleanbinaries: cleanobjects
+	find -maxdepth 16 -name "*.elf" | xargs rm -f
+	find -maxdepth 16 -name "*.bin" | xargs rm -f
+
+cleanolds:
+	find -maxdepth 16 -name "*.old" | xargs rm -rf
