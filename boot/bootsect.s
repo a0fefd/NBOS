@@ -1,5 +1,5 @@
-org 0x7c00
-bits 16
+[bits 16]
+[org 0x7c00]
 
 %define endl 0xd, 0xa
 
@@ -81,23 +81,23 @@ _start:
     xor bx, bx
     mov di, buffer
 
-.find_kernel:
-    mov si, kernel_file_name
+.find_stage2:
+    mov si, stage2_file_name
     mov cx, 11
     push di
     repe cmpsb
     pop di
-    je .found_kernel
+    je .found_stage2
 
     add di, 32
     inc bx
     cmp bx, [bdb_dir_entries_count]
-    jl .find_kernel
+    jl .find_stage2
 
-    jmp kernel_nfound_err
-.found_kernel:
+    jmp stage2_nfound_err
+.found_stage2:
     mov ax, [di + 26]
-    mov [kernel_clust], ax
+    mov [stage2_clust], ax
 
     mov ax, [bdb_reserved_sectors]
     mov bx, buffer
@@ -105,18 +105,18 @@ _start:
     mov dl, [ebr_drive_number]
     call disk_read
 
-    mov bx, KERNEL_LOAD_SEGM
+    mov bx, stage2_LOAD_SEGM
     mov es, bx
-    mov bx, KERNEL_LOAD_OFFS
-.load_kernel_loop:
-    mov ax, [kernel_clust]
+    mov bx, stage2_LOAD_OFFS
+.load_stage2_loop:
+    mov ax, [stage2_clust]
     add ax, 31
     mov cl, 1
     mov dl, [ebr_drive_number]
     call disk_read
 
     add bx, [bdb_bytes_per_sector]
-    mov ax, [kernel_clust]
+    mov ax, [stage2_clust]
     mov cx, 3
     mul cx
     mov cx, 2
@@ -136,17 +136,17 @@ _start:
 .next_clust_after:
     cmp ax, 0xff8
     jae .read_finished
-    mov [kernel_clust], ax
-    jmp .load_kernel_loop
+    mov [stage2_clust], ax
+    jmp .load_stage2_loop
 .read_finished:
 
     mov dl, [ebr_drive_number]
 
-    mov ax, KERNEL_LOAD_SEGM
+    mov ax, stage2_LOAD_SEGM
     mov ds, ax
     mov es, ax
 
-    jmp KERNEL_LOAD_SEGM:KERNEL_LOAD_OFFS
+    jmp stage2_LOAD_SEGM:stage2_LOAD_OFFS
 
     jmp hang
 
@@ -216,8 +216,8 @@ disk_err:
     call puts
     jmp hang
 
-kernel_nfound_err:
-    mov si, msg_kernel_nfound
+stage2_nfound_err:
+    mov si, msg_stage2_nfound
     call puts
     jmp hang
 
@@ -248,12 +248,12 @@ puts:
 
 msg_load: db "Loading...", endl, 0
 msg_read_fail: db "Read failed.", endl, 0
-msg_kernel_nfound: db "KERNEL NOT FOUND", endl, 0
-kernel_file_name: db "KERNEL  BIN"
-kernel_clust: dw 0
+msg_stage2_nfound: db "Stage2 NOT FOUND", endl, 0
+stage2_file_name: db "STAGE2  BIN"
+stage2_clust: dw 0
 
-KERNEL_LOAD_SEGM equ 0x2000
-KERNEL_LOAD_OFFS equ 0
+stage2_LOAD_SEGM equ 0x0000
+stage2_LOAD_OFFS equ 0x8000
 
 times 510 - ($-$$) db 0
 
