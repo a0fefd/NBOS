@@ -6,21 +6,15 @@
 #error "ix86-elf compiler required."
 #endif
 
-void kernel_main(void)
+int kernel_main(void)
 {
     /* Initialise terminal interface */
     terminal_initialise();
 
-    const char string[] = "John's OS\n\nMake Sure to SDIYBT\n";
-    size_t string_length = strlen(string);
-
     VGA_COLOUR starting_col = VGA_COLOUR_LIGHT_BLUE;
+    terminal_setcolour(vga_entry_colour(starting_col, VGA_COLOUR_BLACK));
 
-    for (size_t i = 0; i < string_length; i++)
-    {
-        terminal_setcolour(vga_entry_colour(starting_col + i%(16-starting_col), VGA_COLOUR_BLACK));
-        putchar(string[i]);
-    }
+    printf("Welcome to NBOS!\n");
 
-    return;
+    return 0;
 }

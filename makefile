@@ -2,9 +2,10 @@
 AS 		 = nasm
 LD       = i686-elf-ld
 GCC      = i686-elf-gcc
+OBJCOPY  = i686-elf-objcopy
 
 CFLAGS   ?= -O2 -g
-CFLAGS   := $(CFLAGS) -Wall -Wextra -ffreestanding -std=gnu11 -m32
+CFLAGS   := $(CFLAGS) -Wall -Wextra -ffreestanding -std=gnu11
 
 SOURCE_PATH        = src/
 BUILD_PATH         = build/
@@ -47,6 +48,10 @@ compilekernel:
 	$(foreach src,$(KERNEL_SOURCES), \
 		$(GCC) -c $(src) -o $(BUILD_PATH)$(notdir $(src:.c=.o)) -std=gnu11 -ffreestanding $(CFLAGS);)
 
+	$(AS) -f elf32 $(KERNEL_SOURCE_PATH)kernel.s -o $(BUILD_PATH)kernel_asm.o
+	$(LD) -T $(KERNEL_LINKER) -m elf_i386 -o $(BUILD_PATH)kernel.elf $(BUILD_PATH)kernel_asm.o $(LIBC_OBJECTS) $(KERNEL_OBJECTS) 
+	$(OBJCOPY) -O binary $(BUILD_PATH)kernel.elf $(KERNEL_BIN)
+
 # 	ld -T $(KERNEL_LINKER) -o $(KERNEL_ELF) $(BUILD_PATH)lkernel.o $(LIBC_OBJECTS) $(KERNEL_OBJECTS)
 # 	objcopy -O binary $(KERNEL_ELF) $(KERNEL_BIN)
 
@@ -61,12 +66,13 @@ makefloppy:
 	dd if=$(BUILD_PATH)bin/boot.bin of=$(FLOPPY) conv=notrunc
 
 	mcopy -i $(FLOPPY) $(BUILD_PATH)bin/boot2.bin "::stage2.bin"
+	mcopy -i $(FLOPPY) $(BUILD_PATH)bin/kernel.bin "::kernel.bin"
 	truncate -s 1440k $(FLOPPY)
 
 # Run
 run:
-# 	qemu-system-i386 -drive format=raw,file=$(FLOPPY) -no-reboot
-	qemu-system-i386 -drive format=raw,file=$(FLOPPY)
+	qemu-system-i386 -drive format=raw,file=$(FLOPPY) -no-reboot
+# 	qemu-system-i386 -drive format=raw,file=$(FLOPPY)
 
 # Cleanup
 clean:
