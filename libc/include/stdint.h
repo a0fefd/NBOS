@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef _STDINT_H
 #define _STDINT_H
 

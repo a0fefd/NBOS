@@ -25,7 +25,7 @@ EXPORT_DRIVE 	= floppydrive_NBOS
 # Collect all sources
 KERNEL_SOURCES 		= $(wildcard $(KERNEL_SOURCE_PATH)*.c $(KERNEL_SOURCE_PATH)*/*.c)
 KERNEL_ASM_SOURCES 	= $(filter-out $(KERNEL_SOURCE_PATH)kernel.s, \
-					  $(wildcard $(KERNEL_SOURCE_PATH)*.s))
+					  $(wildcard $(KERNEL_SOURCE_PATH)*.s $(KERNEL_SOURCE_PATH)*/*.s))
 LIBC_SOURCES   		= $(wildcard $(LIBC_SOURCE_PATH)*.c $(LIBC_SOURCE_PATH)*/*.c)
 BOOT_SOURCES		= $(BOOT_SOURCE_PATH)bootsect.s
 
@@ -40,18 +40,16 @@ OBJECTFILES    	= $(BOOT_OBJECTS) $(LIBC_OBJECTS) $(KERNEL_OBJECTS) $(BASH_OBJEC
 
 KERNEL_LINKER 	= $(SOURCE_PATH)linker_kernel.ld
 
-all: clean compilekernel buildboot makefloppy finished
-	make clean
+all: clean setup build_kernel build_bootloader build_floppy finished
+
+setup:
+	mkdir -p $(BUILD_PATH) $(BUILD_PATH)stdio $(BUILD_PATH)bash $(BUILD_PATH)bin $(BUILD_PATH)i686
 
 # Compilation
-compilekernel:
-	mkdir -p $(BUILD_PATH) $(BUILD_PATH)stdio $(BUILD_PATH)bash $(BUILD_PATH)bin
-
-	# Compile libc source
+build_kernel:
 	$(foreach src,$(LIBC_SOURCES), \
 		$(GCC) -c $(src) -o $(patsubst $(LIBC_SOURCE_PATH)%,$(BUILD_PATH)%,$(src:.c=.o)) -std=gnu11 -ffreestanding $(CFLAGS);)
 
-	# Compile c source
 	$(foreach src,$(KERNEL_SOURCES), \
 		$(GCC) -c $(src) -o $(patsubst $(KERNEL_SOURCE_PATH)%,$(BUILD_PATH)%,$(src:.c=.o)) -std=gnu11 -ffreestanding $(CFLAGS);)
 
@@ -59,25 +57,23 @@ compilekernel:
 		$(GCC) -c $(src) -o $(patsubst $(BASH_SOURCE_PATH)%,$(BUILD_PATH)%,$(src:.c=.o)) -std=gnu11 -ffreestanding $(CFLAGS);)
 
 	$(AS) -f elf32 $(KERNEL_SOURCE_PATH)kernel.s -o $(BUILD_PATH)kernel.o
-	$(AS) -f elf32 $(KERNEL_SOURCE_PATH)idt_s.s -o $(BUILD_PATH)idt_s.o
-# 	$(AS) -f elf32 $(KERNEL_SOURCE_PATH)isr.s -o $(BUILD_PATH)isr.o
+	$(AS) -f elf32 $(KERNEL_SOURCE_PATH)i686/idt_s.s -o $(BUILD_PATH)i686/idt_s.o
 
-	$(LD) -T $(KERNEL_LINKER) -m elf_i386 -o $(BUILD_PATH)kernel.elf $(BUILD_PATH)kernel.o $(LIBC_OBJECTS) $(KERNEL_ALL_OBJECTS) 
+	$(LD) -T $(KERNEL_LINKER) -m elf_i386 -o $(KERNEL_ELF) $(BUILD_PATH)kernel.o $(LIBC_OBJECTS) $(KERNEL_ALL_OBJECTS) 
 	$(OBJCOPY) -O binary $(BUILD_PATH)kernel.elf $(KERNEL_BIN)
 
-# Assembly
-buildboot:
+
+build_bootloader:
 	$(AS) $(BOOT_SOURCE_PATH)bootsect.s -f bin -o $(BOOT_BIN)
 	$(AS) $(BOOT_SOURCE_PATH)bootstage2.s -f bin -o $(BOOT2_BIN)
 
-makefloppy:
+build_floppy:
 	dd if=/dev/zero of=$(FLOPPY) bs=512 count=2880
 	mkfs.fat -F 12 -n "NBOS" $(FLOPPY)
 	dd if=$(BUILD_PATH)bin/boot.bin of=$(FLOPPY) conv=notrunc
 
 	mcopy -i $(FLOPPY) $(BUILD_PATH)bin/boot2.bin "::stage2.bin"
 	mcopy -i $(FLOPPY) $(BUILD_PATH)bin/kernel.bin "::kernel.bin"
-	truncate -s 1440k $(FLOPPY)
 
 finished:
 	cp $(FLOPPY) $(EXPORT_DRIVE)

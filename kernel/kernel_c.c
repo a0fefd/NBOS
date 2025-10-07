@@ -1,6 +1,6 @@
 #include "include/kernel.h"
 #include "include/tutils.h"
-#include "include/idt.h"
+#include "i686/include/idt.h"
 #include "include/keyboard.h"
 #include "bash/include/bash.h"
 #include "../libc/include/stdio.h"
@@ -12,7 +12,7 @@ int kernel_main(void)
     terminal_initialise();
 
     /* Setup IDT table */
-    idt_install();
+    i686_idt_init();
     
     /* Initialise keyboard interactions */
     // keyboard_init();
@@ -25,7 +25,7 @@ int kernel_main(void)
         )
     );
     
-    printf("Welcome to NBOS!\n");
+    printf("Welcome to NBOS!!\n");
     
     char input_buffer[256];
     uint8_t input_buffer_idx = 0;

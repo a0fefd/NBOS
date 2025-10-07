@@ -11,10 +11,5 @@ typedef struct KEY_EVENT_ST {
 } KEY_EVENT;
 
 void keyboard_init();
-void keyboard_handler();
-char keyboard_getchar();
-
-extern volatile char key_buffer[BUFFER_SIZE];
-extern volatile int buf_index;
 
 #endif
