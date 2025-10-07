@@ -5,12 +5,11 @@ GCC      = i686-elf-gcc
 OBJCOPY  = i686-elf-objcopy
 
 CFLAGS   ?= -O2 -g
-CFLAGS   := $(CFLAGS) -Wall -Wextra -ffreestanding -std=gnu11
+CFLAGS   := $(CFLAGS) -Wall -Wextra -Wno-unused-variable -ffreestanding -std=gnu11
 
 SOURCE_PATH       	= src/
 BUILD_PATH        	= build/
 KERNEL_SOURCE_PATH	= kernel/
-BASH_SOURCE_PATH	= $(KERNEL_SOURCE_PATH)bash/
 LIBC_SOURCE_PATH	= libc/
 BOOT_SOURCE_PATH	= boot/
 ISO_PATH        	= $(BUILD_PATH)iso/
@@ -24,14 +23,16 @@ FLOPPY     		= $(BUILD_PATH)floppy.iso
 EXPORT_DRIVE 	= floppydrive_NBOS
 
 # Collect all sources
-KERNEL_SOURCES 	= $(wildcard $(KERNEL_SOURCE_PATH)*.c)
-BASH_SOURCES 	= $(wildcard $(BASH_SOURCE_PATH)*.c)
-LIBC_SOURCES   	= $(wildcard $(LIBC_SOURCE_PATH)*.c $(LIBC_SOURCE_PATH)*/*.c)
-BOOT_SOURCES	= $(BOOT_SOURCE_PATH)bootsect.s
+KERNEL_SOURCES 		= $(wildcard $(KERNEL_SOURCE_PATH)*.c $(KERNEL_SOURCE_PATH)*/*.c)
+KERNEL_ASM_SOURCES 	= $(filter-out $(KERNEL_SOURCE_PATH)kernel.s, \
+					  $(wildcard $(KERNEL_SOURCE_PATH)*.s))
+LIBC_SOURCES   		= $(wildcard $(LIBC_SOURCE_PATH)*.c $(LIBC_SOURCE_PATH)*/*.c)
+BOOT_SOURCES		= $(BOOT_SOURCE_PATH)bootsect.s
 
-KERNEL_OBJECTS ?= $(patsubst $(KERNEL_SOURCE_PATH)%.c,$(BUILD_PATH)%.o,$(KERNEL_SOURCES))
-BASH_OBJECTS 	= $(patsubst $(BASH_SOURCE_PATH)%.c,$(BUILD_PATH)%.o,$(BASH_SOURCES))
-KERNEL_OBJECTS := $(KERNEL_OBJECTS) $(BASH_OBJECTS)
+KERNEL_OBJECTS 	   ?= $(patsubst $(KERNEL_SOURCE_PATH)%.c,$(BUILD_PATH)%.o,$(KERNEL_SOURCES))
+BASH_OBJECTS 		= $(patsubst $(BASH_SOURCE_PATH)%.c,$(BUILD_PATH)%.o,$(BASH_SOURCES))
+KERNEL_ASM_OBJECTS 	= $(patsubst $(KERNEL_SOURCE_PATH)%.s,$(BUILD_PATH)%.o,$(KERNEL_ASM_SOURCES))
+KERNEL_ALL_OBJECTS := $(KERNEL_ASM_OBJECTS) $(KERNEL_OBJECTS) $(BASH_OBJECTS) 
 
 LIBC_OBJECTS   	= $(patsubst $(LIBC_SOURCE_PATH)%,$(BUILD_PATH)%,$(LIBC_SOURCES:.c=.o))
 BOOT_OBJECTS   	= $(BUILD_PATH)boot.o
@@ -52,17 +53,17 @@ compilekernel:
 
 	# Compile c source
 	$(foreach src,$(KERNEL_SOURCES), \
-		$(GCC) -c $(src) -o $(BUILD_PATH)$(notdir $(src:.c=.o)) -std=gnu11 -ffreestanding $(CFLAGS);)
+		$(GCC) -c $(src) -o $(patsubst $(KERNEL_SOURCE_PATH)%,$(BUILD_PATH)%,$(src:.c=.o)) -std=gnu11 -ffreestanding $(CFLAGS);)
 
 	$(foreach src,$(BASH_SOURCES), \
-		$(GCC) -c $(src) -o $(BUILD_PATH)$(notdir $(src:.c=.o)) -std=gnu11 -ffreestanding $(CFLAGS);)
+		$(GCC) -c $(src) -o $(patsubst $(BASH_SOURCE_PATH)%,$(BUILD_PATH)%,$(src:.c=.o)) -std=gnu11 -ffreestanding $(CFLAGS);)
 
-	$(AS) -f elf32 $(KERNEL_SOURCE_PATH)kernel.s -o $(BUILD_PATH)kernel_asm.o
-	$(LD) -T $(KERNEL_LINKER) -m elf_i386 -o $(BUILD_PATH)kernel.elf $(BUILD_PATH)kernel_asm.o $(LIBC_OBJECTS) $(KERNEL_OBJECTS) 
+	$(AS) -f elf32 $(KERNEL_SOURCE_PATH)kernel.s -o $(BUILD_PATH)kernel.o
+	$(AS) -f elf32 $(KERNEL_SOURCE_PATH)idt_s.s -o $(BUILD_PATH)idt_s.o
+# 	$(AS) -f elf32 $(KERNEL_SOURCE_PATH)isr.s -o $(BUILD_PATH)isr.o
+
+	$(LD) -T $(KERNEL_LINKER) -m elf_i386 -o $(BUILD_PATH)kernel.elf $(BUILD_PATH)kernel.o $(LIBC_OBJECTS) $(KERNEL_ALL_OBJECTS) 
 	$(OBJCOPY) -O binary $(BUILD_PATH)kernel.elf $(KERNEL_BIN)
-
-# 	ld -T $(KERNEL_LINKER) -o $(KERNEL_ELF) $(BUILD_PATH)lkernel.o $(LIBC_OBJECTS) $(KERNEL_OBJECTS)
-# 	objcopy -O binary $(KERNEL_ELF) $(KERNEL_BIN)
 
 # Assembly
 buildboot:
@@ -83,6 +84,7 @@ finished:
 
 # Run
 run:
+# 	qemu-system-i386 -drive format=raw,file=$(EXPORT_DRIVE) -no-reboot -serial stdio -display gtk,zoom-to-fit=on
 	qemu-system-i386 -drive format=raw,file=$(EXPORT_DRIVE) -no-reboot -serial stdio
 
 # Cleanup
@@ -90,7 +92,7 @@ clean: cleanbinaries
 	rm -rf $(BUILD_PATH)* *.iso
 
 cleanobjects:
-	find -maxdepth 16 -name "*.o" | xargs rm -f
+	find -maxdepth 16 -name "*.o" | xargs rm -f 
 
 cleanbinaries: cleanobjects
 	find -maxdepth 16 -name "*.elf" | xargs rm -f
