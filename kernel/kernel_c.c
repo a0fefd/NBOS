@@ -1,8 +1,9 @@
 #include "include/kernel.h"
 #include "include/tutils.h"
-#include "i686/include/idt.h"
 #include "include/keyboard.h"
 #include "bash/include/bash.h"
+#include "i686/include/idt.h"
+#include "i686/include/pic.h"
 #include "../libc/include/stdio.h"
 
 
@@ -14,6 +15,9 @@ int kernel_main(void)
     /* Setup IDT table */
     i686_idt_init();
     
+    /* Setup PIC */
+    // i686_pic_config(uint8_t offset_pic1, uint8_t offset_pic2)
+
     /* Initialise keyboard interactions */
     // keyboard_init();
     
@@ -26,10 +30,7 @@ int kernel_main(void)
     );
     
     printf("Welcome to NBOS!!\n");
-    
-    char input_buffer[256];
-    uint8_t input_buffer_idx = 0;
-    
+
     asm volatile ("sti");
 
     return 0;

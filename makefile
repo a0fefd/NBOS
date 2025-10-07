@@ -58,6 +58,7 @@ build_kernel:
 
 	$(AS) -f elf32 $(KERNEL_SOURCE_PATH)kernel.s -o $(BUILD_PATH)kernel.o
 	$(AS) -f elf32 $(KERNEL_SOURCE_PATH)i686/idt_s.s -o $(BUILD_PATH)i686/idt_s.o
+	$(AS) -f elf32 $(KERNEL_SOURCE_PATH)i686/io_s.s -o $(BUILD_PATH)i686/io_s.o
 
 	$(LD) -T $(KERNEL_LINKER) -m elf_i386 -o $(KERNEL_ELF) $(BUILD_PATH)kernel.o $(LIBC_OBJECTS) $(KERNEL_ALL_OBJECTS) 
 	$(OBJCOPY) -O binary $(BUILD_PATH)kernel.elf $(KERNEL_BIN)
