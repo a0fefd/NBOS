@@ -1,6 +1,6 @@
 #ifndef _KERNEL_H
 #define _KERNEL_H
 
-extern kernel_main();
+extern int kernel_main();
 
 #endif

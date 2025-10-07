@@ -7,12 +7,13 @@ OBJCOPY  = i686-elf-objcopy
 CFLAGS   ?= -O2 -g
 CFLAGS   := $(CFLAGS) -Wall -Wextra -ffreestanding -std=gnu11
 
-SOURCE_PATH        = src/
-BUILD_PATH         = build/
-KERNEL_SOURCE_PATH = kernel/
-LIBC_SOURCE_PATH   = libc/
-BOOT_SOURCE_PATH   = boot/
-ISO_PATH           = $(BUILD_PATH)iso/
+SOURCE_PATH       	= src/
+BUILD_PATH        	= build/
+KERNEL_SOURCE_PATH	= kernel/
+BASH_SOURCE_PATH	= $(KERNEL_SOURCE_PATH)bash/
+LIBC_SOURCE_PATH	= libc/
+BOOT_SOURCE_PATH	= boot/
+ISO_PATH        	= $(BUILD_PATH)iso/
 
 BOOT_BIN  		= $(BUILD_PATH)bin/boot.bin
 BOOT2_BIN  		= $(BUILD_PATH)bin/boot2.bin
@@ -24,13 +25,17 @@ EXPORT_DRIVE 	= floppydrive_NBOS
 
 # Collect all sources
 KERNEL_SOURCES 	= $(wildcard $(KERNEL_SOURCE_PATH)*.c)
+BASH_SOURCES 	= $(wildcard $(BASH_SOURCE_PATH)*.c)
 LIBC_SOURCES   	= $(wildcard $(LIBC_SOURCE_PATH)*.c $(LIBC_SOURCE_PATH)*/*.c)
 BOOT_SOURCES	= $(BOOT_SOURCE_PATH)bootsect.s
 
-KERNEL_OBJECTS 	= $(patsubst $(KERNEL_SOURCE_PATH)%.c,$(BUILD_PATH)%.o,$(KERNEL_SOURCES))
+KERNEL_OBJECTS ?= $(patsubst $(KERNEL_SOURCE_PATH)%.c,$(BUILD_PATH)%.o,$(KERNEL_SOURCES))
+BASH_OBJECTS 	= $(patsubst $(BASH_SOURCE_PATH)%.c,$(BUILD_PATH)%.o,$(BASH_SOURCES))
+KERNEL_OBJECTS := $(KERNEL_OBJECTS) $(BASH_OBJECTS)
+
 LIBC_OBJECTS   	= $(patsubst $(LIBC_SOURCE_PATH)%,$(BUILD_PATH)%,$(LIBC_SOURCES:.c=.o))
 BOOT_OBJECTS   	= $(BUILD_PATH)boot.o
-OBJECTFILES    	= $(BOOT_OBJECTS) $(LIBC_OBJECTS) $(KERNEL_OBJECTS)
+OBJECTFILES    	= $(BOOT_OBJECTS) $(LIBC_OBJECTS) $(KERNEL_OBJECTS) $(BASH_OBJECTS)
 
 KERNEL_LINKER 	= $(SOURCE_PATH)linker_kernel.ld
 
@@ -39,8 +44,7 @@ all: clean compilekernel buildboot makefloppy finished
 
 # Compilation
 compilekernel:
-	mkdir -p $(BUILD_PATH) $(BUILD_PATH)stdio
-	mkdir -p $(BUILD_PATH) $(BUILD_PATH)bin
+	mkdir -p $(BUILD_PATH) $(BUILD_PATH)stdio $(BUILD_PATH)bash $(BUILD_PATH)bin
 
 	# Compile libc source
 	$(foreach src,$(LIBC_SOURCES), \
@@ -48,6 +52,9 @@ compilekernel:
 
 	# Compile c source
 	$(foreach src,$(KERNEL_SOURCES), \
+		$(GCC) -c $(src) -o $(BUILD_PATH)$(notdir $(src:.c=.o)) -std=gnu11 -ffreestanding $(CFLAGS);)
+
+	$(foreach src,$(BASH_SOURCES), \
 		$(GCC) -c $(src) -o $(BUILD_PATH)$(notdir $(src:.c=.o)) -std=gnu11 -ffreestanding $(CFLAGS);)
 
 	$(AS) -f elf32 $(KERNEL_SOURCE_PATH)kernel.s -o $(BUILD_PATH)kernel_asm.o
@@ -59,8 +66,8 @@ compilekernel:
 
 # Assembly
 buildboot:
-	nasm $(BOOT_SOURCE_PATH)bootsect.s -f bin -o $(BOOT_BIN)
-	nasm $(BOOT_SOURCE_PATH)bootstage2.s -f bin -o $(BOOT2_BIN)
+	$(AS) $(BOOT_SOURCE_PATH)bootsect.s -f bin -o $(BOOT_BIN)
+	$(AS) $(BOOT_SOURCE_PATH)bootstage2.s -f bin -o $(BOOT2_BIN)
 
 makefloppy:
 	dd if=/dev/zero of=$(FLOPPY) bs=512 count=2880

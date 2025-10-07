@@ -1,20 +1,25 @@
 #include "include/tutils.h"
 #include "include/kernel.h"
+#include "bash/include/bash.h"
 #include "../libc/include/stdio.h"
 
-#if !defined (__i386__)
-#error "ix86-elf compiler required."
-#endif
 
 int kernel_main(void)
 {
     /* Initialise terminal interface */
     terminal_initialise();
 
-    VGA_COLOUR starting_col = VGA_COLOUR_LIGHT_BLUE;
-    terminal_setcolour(vga_entry_colour(starting_col, VGA_COLOUR_BLACK));
+    /* Set the colour of the terminal */
+    terminal_setcolour(
+        vga_entry_colour(
+            VGA_COLOUR_WHITE,   // Text colour
+            VGA_COLOUR_BLACK    // Background colour
+        )
+    );
 
     printf("Welcome to NBOS!\n");
+
+    bash_execute(bash_cmd_echo("john sigma\n"));
 
     return 0;
 }
