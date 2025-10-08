@@ -57,6 +57,7 @@ build_kernel:
 		$(GCC) -c $(src) -o $(patsubst $(BASH_SOURCE_PATH)%,$(BUILD_PATH)%,$(src:.c=.o)) -std=gnu11 -ffreestanding $(CFLAGS);)
 
 	$(AS) -f elf32 $(KERNEL_SOURCE_PATH)kernel.s -o $(BUILD_PATH)kernel.o
+	$(AS) -f elf32 $(KERNEL_SOURCE_PATH)i686/gdt_s.s -o $(BUILD_PATH)i686/gdt_s.o
 	$(AS) -f elf32 $(KERNEL_SOURCE_PATH)i686/idt_s.s -o $(BUILD_PATH)i686/idt_s.o
 	$(AS) -f elf32 $(KERNEL_SOURCE_PATH)i686/io_s.s -o $(BUILD_PATH)i686/io_s.o
 	$(AS) -f elf32 $(KERNEL_SOURCE_PATH)i686/isr_s.s -o $(BUILD_PATH)i686/isr_s.o
