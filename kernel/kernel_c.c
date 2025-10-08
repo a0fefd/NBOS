@@ -35,11 +35,5 @@ int kernel_main(void)
 
     printf("Welcome to NBOS!\n");
 
-    asm ("int $0x0");
-    asm ("int $0x1");
-    asm ("int $0x2");
-    asm ("int $0x3");
-    asm ("int $0x4");
-
     return 0;
 }

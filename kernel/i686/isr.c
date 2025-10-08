@@ -1,6 +1,6 @@
 #include "include/isr.h"
-#include "include/idt.h"
-// #include "include/isrs.h"
+
+isr_handler isr_handlers[256];
 
 extern void i686_isr_initgates();
 
@@ -16,5 +16,10 @@ void i686_isr_init()
 
 void __attribute__((cdecl)) i686_isr_handler(registers_t* regs)
 {
-    printf("Interrupt %d\n", regs->interrupt);
+
+    // printf("Interrupt %d\n", regs->interrupt);
+    if (isr_handlers[regs->interrupt] != NULL)
+        isr_handlers[regs->interrupt](regs);
+    else
+        printf("Unhandled interrupt %d\n", regs->interrupt);
 }
