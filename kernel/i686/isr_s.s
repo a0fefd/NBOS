@@ -7,7 +7,7 @@ extern i686_isr_handler
 global i686_isr%1:
 
 i686_isr%1:
-    push 0 ; dummy err
+    push 0
     push %1
     jmp isr_common
 

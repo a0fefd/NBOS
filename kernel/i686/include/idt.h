@@ -34,6 +34,8 @@ typedef enum IDT_FLAGS_EN {
 
 #define idt_dt_t idt_descriptor_t
 
+extern idt_entry_t idt[256];
+
 void i686_idt_init();
 // extern void idt_load(idt_dt_t* idt_desc);
 void i686_idt_setgate(int intcode, void* base, uint16_t selector, uint8_t flags);

@@ -37,7 +37,7 @@ void i686_pic_mask(int irq);
 void i686_pic_unmask(int irq);
 void i686_pic_disable();
 void i686_pic_sendeoi(int irq);
-uint16_t i686_pic_read_irqrequestregister();
-uint16_t i686_pic_read_inserviceregister();
+uint16_t i686_pic_get_irr();
+uint16_t i686_pic_get_isr();
 
 #endif

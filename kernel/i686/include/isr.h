@@ -15,5 +15,6 @@ typedef void (*isr_handler)(registers_t* regs);
 
 void i686_isr_init();
 extern void __attribute__((cdecl)) i686_isr_handler(registers_t* regs);
+void i686_isr_registerhandler(int intcode, isr_handler handler);
 
 #endif

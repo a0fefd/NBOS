@@ -84,7 +84,8 @@ finished:
 # Run
 run:
 # 	qemu-system-i386 -drive format=raw,file=$(EXPORT_DRIVE) -no-reboot -serial stdio -display gtk,zoom-to-fit=on
-	qemu-system-i386 -drive format=raw,file=$(EXPORT_DRIVE) -no-reboot -serial stdio
+# 	qemu-system-i386 -drive format=raw,file=$(EXPORT_DRIVE)
+	qemu-system-i386 -fda $(EXPORT_DRIVE)
 
 # Cleanup
 clean: cleanbinaries
