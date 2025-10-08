@@ -5,7 +5,7 @@ size_t terminal_column;
 uint8_t terminal_color;
 uint16_t* terminal_buffer = (uint16_t*)VGA_MEMORY;
 
-void terminal_initialise(void)
+void terminal_init()
 {
     terminal_row = 0;
     terminal_column = 0;

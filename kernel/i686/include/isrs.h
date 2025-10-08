@@ -1,7 +1,7 @@
 #ifndef _ISRS_H
 #define _ISRS_H
 
-void i686_isr_initgates();
+extern void i686_isr_initgates();
 
 void __attribute__((cdecl)) i686_isr0();
 void __attribute__((cdecl)) i686_isr1();

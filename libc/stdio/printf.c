@@ -61,6 +61,33 @@ int printf(const char* restrict format, ...) {
 			if (!print(str, len))
 				return -1;
 			written += len;
+		} else if (*format == 'd') {
+			format++;
+			int value = va_arg(parameters, int);
+
+			char buffer[32];  // enough for 32-bit int
+			char* ptr = buffer + sizeof(buffer) - 1;
+			*ptr = '\0';
+
+			bool negative = value < 0;
+			unsigned int uval = negative ? -value : value;
+
+			do {
+				*--ptr = '0' + (uval % 10);
+				uval /= 10;
+			} while (uval > 0);
+
+			if (negative)
+				*--ptr = '-';
+
+			size_t len = (buffer + sizeof(buffer) - 1) - ptr;
+			if (maxrem < len)
+				return -1;
+
+			if (!print(ptr, len))
+				return -1;
+
+			written += len;
 		} else {
 			format = format_begun_at;
 			size_t len = strlen(format);
