@@ -31,7 +31,7 @@ void i686_irq_init()
     for (int i = 0; i < 16; i++)
         i686_isr_registerhandler(PIC_REMAP_OFFSET + i, i686_irq_handler);
 
-    i686_sti();
+    // i686_sti();
 }
 
 void i686_irq_registerhandler(int irq, irq_handler handler)

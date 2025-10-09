@@ -1,6 +1,6 @@
 #ifndef _KERNEL_H
 #define _KERNEL_H
 
-extern int kernel_main();
+void __attribute__((cdecl)) kernel_main();
 
 #endif

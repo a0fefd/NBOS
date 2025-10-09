@@ -39,4 +39,6 @@ void i686_pic_sendeoi(int irq);
 uint16_t i686_pic_get_irr();
 uint16_t i686_pic_get_isr();
 
+void i686_pit_init();
+
 #endif

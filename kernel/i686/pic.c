@@ -99,8 +99,8 @@ static uint16_t i686_pic_get_irq_reg(int ocw3)
 {
     /* OCW3 to PIC CMD to get the register values.  PIC2 is chained, and
      * represents IRQs 8-15.  PIC1 is IRQs 0-7, with 2 being the chain */
-    i686_outb(PIC1_PORT_COMMAND, ocw3);
-    i686_outb(PIC2_PORT_COMMAND, ocw3);
+    i686_outb(PIC1_PORT_COMMAND, ocw3); i686_iowait();
+    i686_outb(PIC2_PORT_COMMAND, ocw3); i686_iowait();
     return (i686_inb(PIC2_PORT_COMMAND) << 8) | i686_inb(PIC2_PORT_COMMAND);
 }
 
