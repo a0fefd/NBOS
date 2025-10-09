@@ -18,14 +18,10 @@ extern uint8_t __end;
 
 void kernel_init()
 {
-    i686_cli();
-
     i686_gdt_init();   
     i686_idt_init();
     i686_isr_init();
     i686_irq_init();
-
-    i686_sti();
 }
 
 void dump_idt(int n)
@@ -62,8 +58,6 @@ int kernel_main()
 
     /* Program Start */
     printf("Welcome to NBOS!\n");
-
-    // asm ("int $0x20");
 
     return 0;
 }

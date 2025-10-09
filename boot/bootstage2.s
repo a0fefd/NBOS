@@ -4,8 +4,8 @@
 
 jmp _start
 
-%include "boot/FAT.inc"
-%include "boot/disk_utils.inc"
+%include "FAT.inc"
+%include "disk_utils.inc"
 
 ; GDT (Global Descriptor Table)
 gdt_start:

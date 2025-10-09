@@ -25,6 +25,7 @@ void i686_irq_handler(registers_t* regs)
 
 void i686_irq_init()
 {
+    i686_cli();
     i686_pic_config(PIC_REMAP_OFFSET, PIC_REMAP_OFFSET + 8);
 
     for (int i = 0; i < 16; i++)

@@ -51,7 +51,6 @@ void i686_isr_init()
     for (int i = 0; i < 256; i++)
         i686_idt_enablegate(i);
 
-
     i686_idt_disablegate(0x80);
 }
 

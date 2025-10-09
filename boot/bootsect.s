@@ -6,7 +6,7 @@
 jmp short _start
 nop
 
-%include "boot/FAT.inc"
+%include "FAT.inc"
 
 _start:
     mov ax, 0

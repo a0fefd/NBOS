@@ -29,7 +29,6 @@ typedef enum PIC_CMD_EN {
     PIC_CMD_EOI         = 0x20,
     PIC_CMD_READ_IRR    = 0xa,
     PIC_CMD_READ_ISR    = 0xb,
-
 } PIC_CMD;
 
 void i686_pic_config(uint8_t offset_pic1, uint8_t offset_pic2);

@@ -23,10 +23,15 @@ void i686_pic_config(uint8_t offset_pic1, uint8_t offset_pic2)
     i686_outb(PIC2_PORT_DATA, PIC_ICW4_8086);
     i686_iowait();
 
+    // i686_outb(PIC1_PORT_DATA, PIC_ICW4_AUTO_EOI);
+    // i686_iowait();
+    // i686_outb(PIC2_PORT_DATA, PIC_ICW4_AUTO_EOI);
+    // i686_iowait();
+
     i686_outb(PIC1_PORT_DATA, 0);
-    // i686_iowait();
+    i686_iowait();
     i686_outb(PIC2_PORT_DATA, 0);
-    // i686_iowait();
+    i686_iowait();
 }
 
 void i686_pic_mask(int irq)
@@ -36,8 +41,8 @@ void i686_pic_mask(int irq)
     {
         port = PIC1_PORT_DATA;
     } else {
-        irq -= 8;
         port = PIC2_PORT_DATA;
+        irq -= 8;
     }
     // uint8_t mask = i686_inb(port);
     // i686_outb(port, mask | ( 1 << irq ) );
@@ -52,8 +57,8 @@ void i686_pic_unmask(int irq)
     {
         port = PIC1_PORT_DATA;
     } else {
-        irq -= 8;
         port = PIC2_PORT_DATA;
+        irq -= 8;
     }
     // uint8_t mask = i686_inb(port);
     // i686_outb(port, mask & ~( 1 << irq ) );
