@@ -1,6 +1,5 @@
 #include "i686/include/io.h"
 #include "i686/include/pic.h"
-#include "i686/include/pit.h"
 #include "include/kernel.h"
 #include "../libc/include/stdio.h"
 
@@ -23,9 +22,7 @@ void kernel_init()
     i686_idt_init();
     i686_isr_init();
     i686_irq_init();
-    timer_init();
     i686_sti();
-
 }
 
 void test(registers_t* regs)
@@ -46,24 +43,9 @@ void __attribute__((cdecl)) kernel_main()
     
     // i686_irq_registerhandler(0, test);
 
-    printf("IRR=%d ISR=%d\n", i686_pic_get_irr(), i686_pic_get_isr());
-    for (int i = 0; i < 1<<31; i++) {continue;}
-    for (int i = 0; i < 1<<31; i++) {continue;}
-    for (int i = 0; i < 1<<31; i++) {continue;}
-    for (int i = 0; i < 1<<31; i++) {continue;}
-    for (int i = 0; i < 1<<31; i++) {continue;}
-    for (int i = 0; i < 1<<31; i++) {continue;}
-    for (int i = 0; i < 1<<31; i++) {continue;}
-    for (int i = 0; i < 1<<31; i++) {continue;}
-    for (int i = 0; i < 1<<31; i++) {continue;}
-    for (int i = 0; i < 1<<31; i++) {continue;}
-    for (int i = 0; i < 1<<31; i++) {continue;}
-    for (int i = 0; i < 1<<31; i++) {continue;}
-    for (int i = 0; i < 1<<31; i++) {continue;}
-    for (int i = 0; i < 1<<31; i++) {continue;}
-    for (int i = 0; i < 1<<31; i++) {continue;}
-    for (int i = 0; i < 1<<31; i++) {continue;}
-    printf("IRR=%d ISR=%d\n", i686_pic_get_irr(), i686_pic_get_isr());
+    for (;;) {
+        asm("hlt");
+    }
 
     return;
 }
