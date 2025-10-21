@@ -23,10 +23,10 @@ void i686_pic_config(uint8_t offset_pic1, uint8_t offset_pic2)
     i686_outb(PIC2_PORT_DATA, PIC_ICW4_8086);
     i686_iowait();
 
-    // i686_outb(PIC1_PORT_DATA, PIC_ICW4_AUTO_EOI);
-    // i686_iowait();
-    // i686_outb(PIC2_PORT_DATA, PIC_ICW4_AUTO_EOI);
-    // i686_iowait();
+    i686_outb(PIC1_PORT_DATA, PIC_ICW4_AUTO_EOI);
+    i686_iowait();
+    i686_outb(PIC2_PORT_DATA, PIC_ICW4_AUTO_EOI);
+    i686_iowait();
 
     i686_outb(PIC1_PORT_DATA, 0);
     i686_iowait();

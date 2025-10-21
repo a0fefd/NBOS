@@ -6,10 +6,13 @@
 #define KEYBOARD_DATA_PORT 0x60
 #define BUFFER_SIZE 256
 
+extern char kbd_US[128];
+
 typedef struct KEY_EVENT_ST {
     uint8_t code;
 } KEY_EVENT;
 
-void keyboard_init();
+// void keyboard_init();
+void keyboard_main();
 
 #endif

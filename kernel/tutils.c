@@ -1,5 +1,4 @@
 #include "include/tutils.h"
-
 #include "i686/include/io.h"
 #include "include/vga.h"
 
@@ -178,4 +177,22 @@ void terminal_write(const char* data, size_t size)
 void terminal_writestring(const char* data)
 {
     terminal_write(data, strlen(data));
+}
+
+void terminal_write_left_anchor(const char* buf, size_t x, size_t y)
+{
+    int _row = terminal_row;
+    int _col = terminal_column;
+
+    terminal_setcursor(x, y);
+    terminal_writestring(buf);
+
+    terminal_row = _row;
+    terminal_column = _col;
+    terminal_setcursor(terminal_column, terminal_row);
+}
+
+void terminal_write_right_anchor(const char* buf, size_t x, size_t y)
+{
+    terminal_write_left_anchor(buf, x-strlen(buf), y);
 }
