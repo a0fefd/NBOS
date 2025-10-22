@@ -174,6 +174,10 @@ load_kernel:
 
 .read_finish:
 
+    ; switch to 320:300 16b VGA Graphics
+    mov ax, 0x13
+    int 0x10 
+
     cli
 
     lgdt [gdt_descriptor]

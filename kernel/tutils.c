@@ -10,6 +10,7 @@ VGA_COLOUR terminal_background_colour;
 uint8_t terminal_colour;
 
 uint16_t* terminal_buffer = (uint16_t*)VGA_MEMORY;
+uint8_t* video_buffer = (uint8_t*)0xA0000;
 
 void terminal_init(VGA_COLOUR foreground, VGA_COLOUR background)
 {
