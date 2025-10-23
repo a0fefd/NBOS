@@ -120,7 +120,7 @@ void hexdump(uint8_t* addr, size_t n, void (*__func_printf)(const char* str, ...
 
 void __attribute__((cdecl)) kernel_main(volatile struct VesaModeInfo* info)
 {
-    // memset(&__bss_start, 0, (&__end) - (&__bss_start));
+    memset(&__bss_start, 0, (&__end) - (&__bss_start));
 
     kernel_init();
 
