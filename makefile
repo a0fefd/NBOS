@@ -37,7 +37,7 @@ finished:
 run:
 # 	qemu-system-i386 -drive format=raw,file=$(EXPORT_DRIVE) -no-reboot -serial stdio -display gtk,zoom-to-fit=on
 # 	qemu-system-i386 -drive format=raw,file=$(EXPORT_DRIVE)
-	qemu-system-i386 -fda floppydrive_NBOS.iso
+	qemu-system-i386 -fda floppydrive_NBOS.iso -serial stdio
 
 # Cleanup
 clean: cleanbinaries

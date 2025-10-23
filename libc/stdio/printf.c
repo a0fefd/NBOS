@@ -3,6 +3,7 @@
 #include "../include/stdbool.h"
 #include "../include/string.h"
 #include "../include/stdio.h"
+#include "../../kernel/i686/include/io.h"
 
 static bool print(const char* data, size_t length) {
 	const unsigned char* bytes = (const unsigned char*) data;

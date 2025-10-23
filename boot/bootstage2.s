@@ -42,6 +42,7 @@ MEM_VIDEO equ 0xb8000
 SCREEN_SIZE equ 2000
 
 [bits 16]
+
 _start:
 
 load_kernel:
@@ -174,9 +175,25 @@ load_kernel:
 
 .read_finish:
 
-    ; switch to 320:300 16b VGA Graphics
-    mov ax, 0x13
-    int 0x10 
+    ; ; switch to 320:300 VGA Graphics
+    ; mov ah, 0x00
+    ; mov al, 0x13
+    ; int 0x10 
+
+    mov ax, 0x4F01
+    mov cx, 0x4118
+    mov di, vesa_mode_info
+    push es
+    xor ax, ax
+    mov es, ax
+    int 0x10
+    pop es
+
+    mov ax, 0x4F02       ; VESA set mode
+    mov bx, 0x4118
+    int 0x10
+    cmp ax, 0x004f
+    jne .hang
 
     cli
 
@@ -185,13 +202,17 @@ load_kernel:
     or al, 1
     mov cr0, eax
 
+    mov ebx, [vesa_mode_info]
     jmp CODE_SEG:unreal_start
 
 .hang:
+    mov si, msg_hang
+    call puts
     cli
     hlt
     jmp .hang
 
+msg_hang: db "Hanging...", endl, 0
 kernel_file_name:        db "KERNEL  BIN"
 kernel_cluster:         dw 0
 
@@ -229,7 +250,30 @@ unreal_start:
     hlt
     jmp .hang
 
+puts:
+    push si
+    push ax
+    push bx
+.loop:
+    lodsb
+    or al, al
+    jz .done
+
+    mov ah, 0xe
+    mov bh, 0
+    int 0x10
+    
+    jmp .loop
+.done:
+    pop bx
+    pop ax
+    pop si
+    ret
+
+vesa_mode_info:
+    resb 256
 
 times 2048 - ($-$$) db 0 ; pad to 4 sectors
+
 
 buffer:
