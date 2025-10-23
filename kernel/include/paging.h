@@ -1,5 +1,9 @@
 #pragma once
 
-#include "../../libc/include/stdint.h"
+#include "memory.h"
+// #include "../../libc/include/stdint.h" // in memory.h
 
-void enable_full_paging(uint32_t phys, uint32_t size, void (*__func_printf)(const char* str, ...));
+
+
+void enable_paging(uint32_t phys, uint32_t virt, uint32_t size);
+void paging_debug(void (*__func_printf)(const char* str, ...));

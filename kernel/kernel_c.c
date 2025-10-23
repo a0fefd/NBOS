@@ -117,7 +117,12 @@ void hexdump(uint8_t* addr, size_t n, void (*__func_printf)(const char* str, ...
     }
     __func_printf("\n--\n");
 }
+void hexdump_full(uint8_t* ptr, void (*__func_printf)(const char* str, ...))
+{
+    hexdump(ptr, sizeof(*ptr), __func_printf);
+}
 
+#define VRAM_ADDR 0xe0000000
 void __attribute__((cdecl)) kernel_main(volatile struct VesaModeInfo* info)
 {
     memset(&__bss_start, 0, (&__end) - (&__bss_start));
@@ -158,16 +163,13 @@ void __attribute__((cdecl)) kernel_main(volatile struct VesaModeInfo* info)
     // }
 
 
-    enable_full_paging(info->physbase, info->pitch * info->Yres, printf);
+    enable_paging(info->physbase, VRAM_ADDR, info->pitch * info->Yres);
 
     printf("physbase: %x, bpp: %u, pitch: %u\n", info->physbase, info->bpp, info->pitch);
-
-    hexdump((void*)(info), sizeof(*info), printf);
-
     
     // volatile uint32_t* vram = (volatile uint32_t*)(info->physbase);
-    // volatile uint32_t* vram = (volatile uint32_t*)(0xa0000);
-    volatile uint32_t* vram = (volatile uint32_t*)(0xE0000000);
+    volatile uint32_t* vram = (volatile uint32_t*)(0xa0000);
+    // volatile uint32_t* vram = (volatile uint32_t*)(0xE0000000);
     printf("vram    -> %x\n", vram);
     vram[0] = 0xffffffff;
     printf("vram[0] == %x\n", vram[0]);

@@ -1,6 +1,18 @@
 #include "include/graphics.h"
 
-uint8_t* vram = (uint8_t*)GRAPHICS_MEMORY;
+static uint8_t* vram = (uint8_t*)0xa0000;
+static size_t SCREEN_W     = 320;
+static size_t SCREEN_H     = 300;
+static size_t SCREEN_AREA  = 320*300;
+
+void init_graphics(uint8_t* vram_addr, struct VesaModeInfo* vesa_info_ptr)
+{
+    vram = vram_addr;
+
+    SCREEN_W = vesa_info_ptr->Xres;
+    SCREEN_H = vesa_info_ptr->Yres;
+    SCREEN_AREA = SCREEN_W*SCREEN_H;
+}
 
 void graphics_fillrect(size_t x, size_t y, size_t w, size_t h, uint32_t colour)
 {

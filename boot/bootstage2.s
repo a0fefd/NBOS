@@ -185,6 +185,7 @@ load_kernel:
     ; int 0x10 
 
     mov ax, 0x4F01
+    ; mov cx, 0x4118    
     mov cx, 0x4118
     mov di, vesa_mode_info
     push es
@@ -196,6 +197,7 @@ load_kernel:
     je .hang
 
     mov ax, 0x4F02       ; VESA set mode
+    ; mov bx, 0x4118    
     mov bx, 0x4118
     int 0x10
     cmp ax, 0x004f

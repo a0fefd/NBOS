@@ -3,12 +3,12 @@
 
 #include "../i686/include/io.h"
 
-#define SCREEN_W 1024
-#define SCREEN_H 768
+// #define SCREEN_W 1024
+// #define SCREEN_H 768
 
-// #define SCREEN_W 320
-// #define SCREEN_H 300
-#define SCREEN_AREA (SCREEN_W*SCREEN_H)*3
+// // #define SCREEN_W 320
+// // #define SCREEN_H 300
+// #define SCREEN_AREA (SCREEN_W*SCREEN_H)*3
 
 struct __attribute__((packed)) VesaModeInfo{
     uint16_t attributes;        // 0x00
