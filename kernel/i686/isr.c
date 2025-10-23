@@ -66,7 +66,7 @@ void __attribute__((cdecl)) i686_isr_handler(registers_t* regs)
     {
         printf("Unhandled exception %d: %s\n", regs->interrupt, exceptions[regs->interrupt]);
 
-        printf("eax=%d; ebx=%d; ecx=%d; edx=%d; \ 
+        printf("eax=%x; ebx=%x; ecx=%x; edx=%x; \ 
               \nerr=%d;", 
                 
                 regs->eax, regs->ebx, regs->ecx, regs->edx,

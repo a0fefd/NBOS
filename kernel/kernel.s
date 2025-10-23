@@ -6,12 +6,12 @@ global _start
 extern kernel_main
 
 _start:
-    mov esp, 0x90000
+    mov esp, 0x200000
     mov ebp, esp
 
+    push ebx
     call kernel_main
-
-
+    
 ;
 ; functions
 ;

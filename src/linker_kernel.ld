@@ -3,8 +3,7 @@ ENTRY(_start)
 
 SECTIONS
 {
-    . = 0x10000;
-
+    . = 0x100000;
     .text : {
         *(.text)
         *(.text.*)
@@ -14,6 +13,7 @@ SECTIONS
 
     .data : { *(.data) }
 
+
     .bss : {
         __bss_start = .;
 
@@ -21,5 +21,6 @@ SECTIONS
         *(.bss)
     }
 
+    . = 0x7FFFF;
     __end = .;
 }

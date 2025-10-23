@@ -3,6 +3,7 @@
 #include "include/memory.h"
 #include "include/tutils.h"
 #include "include/graphics.h"
+#include "include/paging.h"
 #include "include/keyboard.h"
 
 #include "i686/include/gdt.h"
@@ -77,9 +78,49 @@ void stdio_write(const char* str)
     }
 }
 
-void __attribute__((cdecl)) kernel_main(struct VesaModeInfo* info)
+typedef void (*voidfptr_t)(void);
+
+static const char hex_characters[] = "0123456789abcdef";
+static void printf_uint32_t_hex(uint32_t number, void (*__func_printf)(const char* str, ...))
 {
-    memset(&__bss_start, 0, (&__end) - (&__bss_start));
+    for (int i = 3; i >= 0; i--)  // print from highest byte to lowest
+    {
+        uint8_t byte = (number >> (i * 8)) & 0xFF;
+        __func_printf("%c", hex_characters[(byte >> 4) & 0xF]);  // high nibble
+        __func_printf("%c", hex_characters[byte & 0xF]);         // low nibble
+    }
+}
+static void printf_uint16_t_hex(uint16_t number, void (*__func_printf)(const char* str, ...))
+{
+    for (int i = 1; i >= 0; i--)  // print from highest byte to lowest
+    {
+        uint8_t byte = (number >> (i * 8)) & 0xFF;
+        __func_printf("%c", hex_characters[(byte >> 4) & 0xF]);  // high nibble
+        __func_printf("%c", hex_characters[byte & 0xF]);         // low nibble
+    }
+}
+static void printf_uint8_t_hex(uint8_t number, void (*__func_printf)(const char* str, ...))
+{
+    uint8_t byte = number & 0xFF;
+    __func_printf("%c", hex_characters[(byte >> 4) & 0xF]);  // high nibble
+    __func_printf("%c", hex_characters[byte & 0xF]);         // low nibble
+}
+
+void hexdump(uint8_t* addr, size_t n, void (*__func_printf)(const char* str, ...))
+{
+    static const uint8_t w = 32;
+    __func_printf("-- addr: %x, n: %u, w: 32", addr, n);
+    for (size_t i = 0; i < n; i++) {
+        ((uint32_t)i % w == 0) ? __func_printf("\n   ") : NULL;
+        printf_uint8_t_hex(*(addr+i), __func_printf);
+        __func_printf(" ");
+    }
+    __func_printf("\n--\n");
+}
+
+void __attribute__((cdecl)) kernel_main(volatile struct VesaModeInfo* info)
+{
+    // memset(&__bss_start, 0, (&__end) - (&__bss_start));
 
     kernel_init();
 
@@ -116,24 +157,25 @@ void __attribute__((cdecl)) kernel_main(struct VesaModeInfo* info)
     //     graphics_fillrect(i, 0, 0, SCREEN_H, graphics_colour(0, i, i));
     // }
 
-    uint32_t* framebuffer = (uint32_t*)info->physbase;
-    uint8_t* framebuffer1 = (uint8_t*)0xa0000;
-    uint16_t pitch = info->pitch;
-    uint8_t  bpp   = info->bpp;
 
-    size_t px = 3*(1*pitch + 1*(bpp/8));
-    *(framebuffer+px) = 0xffffff;
-    *(framebuffer1+px) = 0xff;
-    // for (size_t y = 0; y < SCREEN_H; y++)
-    // {
-    //     for (size_t x = 0; x < SCREEN_W; x++) 
-    //     {
-    //     }
-    // }
+    enable_full_paging(info->physbase, info->pitch * info->Yres, printf);
+
+    printf("physbase: %x, bpp: %u, pitch: %u\n", info->physbase, info->bpp, info->pitch);
+
+    hexdump((void*)(info), sizeof(*info), printf);
+
+    
+    // volatile uint32_t* vram = (volatile uint32_t*)(info->physbase);
+    // volatile uint32_t* vram = (volatile uint32_t*)(0xa0000);
+    volatile uint32_t* vram = (volatile uint32_t*)(0xE0000000);
+    printf("vram    -> %x\n", vram);
+    vram[0] = 0xffffffff;
+    printf("vram[0] == %x\n", vram[0]);
+    
+    // hexdump(vram, 32, printf);
 
     for (;;)
-    {
-        
+    {   
         asm("hlt");
     }
     return;
