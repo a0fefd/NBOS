@@ -43,10 +43,14 @@ SCREEN_SIZE equ 2000
 
 [bits 16]
 section .bss
+; vesa_info_block:
+;     resb 512
 vesa_mode_info:
     resb 256
 section .text
-
+vesa_info_block:
+    db "VESA"
+    resb 508
 _start:
 
 load_kernel:
@@ -136,10 +140,10 @@ load_kernel:
     mov bx, KERNEL_LOAD_OFFSET
 
 .load_kernel_loop:
-    
+
     ; Read next cluster
     mov ax, [kernel_cluster]
-    
+
     ; not nice :( hardcoded value
     add ax, 31                          ; first cluster = (kernel_cluster - 2) * sectors_per_cluster + start_sector
                                         ; start sector = reserved + fats + root directory size = 1 + 18 + 134 = 33
@@ -179,29 +183,34 @@ load_kernel:
 
 .read_finish:
 
-    ; ; switch to 320:300 VGA Graphics
-    ; mov ah, 0x00
-    ; mov al, 0x13
-    ; int 0x10 
-
+    mov ax, 0x4F00
+    mov di, vesa_info_block
+    int 0x10
+    cmp ax, 0x004F
+    jne .hang
+    
     mov ax, 0x4F01
-    ; mov cx, 0x4118    
-    mov cx, 0x4118
+    ; mov cx, 0x4118
+    mov cx, 274
     mov di, vesa_mode_info
     push es
     mov ax, 0
     mov es, ax
     int 0x10
+    cmp ax, 0x004F
+    jne .hang
     pop es
     cmp ah, 0x1
     je .hang
 
     mov ax, 0x4F02       ; VESA set mode
-    ; mov bx, 0x4118    
-    mov bx, 0x4118
+    ; mov bx, 0x4118
+    mov bx, 274
     int 0x10
     cmp ax, 0x004f
     jne .hang
+
+
 
     cli
 
@@ -270,7 +279,7 @@ puts:
     mov ah, 0xe
     mov bh, 0
     int 0x10
-    
+
     jmp .loop
 .done:
     pop bx
@@ -278,7 +287,7 @@ puts:
     pop si
     ret
 
-times 2048 - ($-$$) db 0 ; pad to 4 sectors
+times 4096 - ($-$$) db 0 ; pad to 8 sectors
 
 
 buffer:

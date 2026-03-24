@@ -1,9 +1,10 @@
 #include "include/graphics.h"
 
 static uint8_t* vram = (uint8_t*)0xa0000;
-static size_t SCREEN_W     = 320;
-static size_t SCREEN_H     = 300;
-static size_t SCREEN_AREA  = 320*300;
+static size_t SCREEN_W     = 640;
+static size_t SCREEN_H     = 480;
+static size_t SCREEN_AREA  = 640*480;
+// static size_t SCREEN_AREA  = 320*300;
 
 void init_graphics(uint8_t* vram_addr, struct VesaModeInfo* vesa_info_ptr)
 {

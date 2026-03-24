@@ -40,7 +40,7 @@ _start:
 
     mov ax, 19
     push ax
-    
+
     mov ax, [bdb_dir_entries_count]
     shl ax, 5
     xor dx, dx
@@ -155,7 +155,7 @@ lba_to_chs:
 disk_read:
     pusha
     push cx
-    
+
     call lba_to_chs
     pop ax
 
@@ -217,7 +217,7 @@ puts:
     mov ah, 0xe
     mov bh, 0
     int 0x10
-    
+
     jmp .loop
 .done:
     pop bx

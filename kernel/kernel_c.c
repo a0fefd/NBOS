@@ -19,7 +19,7 @@ extern uint8_t __end;
 
 void kernel_init()
 {
-    i686_gdt_init();   
+    i686_gdt_init();
     i686_idt_init();
     i686_isr_init();
     i686_irq_init();
@@ -32,7 +32,7 @@ void kernel_init()
 
 //     if (scancode > 0x80 /*128*/) { return; }
 
-//     char character = kbd_US[scancode];    
+//     char character = kbd_US[scancode];
 
 //     if (character == 0) { return; }
 
@@ -150,7 +150,7 @@ void __attribute__((cdecl)) kernel_main(volatile struct VesaModeInfo* info)
 
     // text mode not graphics
     // terminal_init(VGA_COLOUR_WHITE, VGA_COLOUR_BLACK);
-    
+
     /* Program Start */
     // printf("Welcome to NBOS!\n");
 
@@ -163,21 +163,37 @@ void __attribute__((cdecl)) kernel_main(volatile struct VesaModeInfo* info)
     // }
 
 
-    enable_paging(info->physbase, VRAM_ADDR, info->pitch * info->Yres);
+    // enable_paging(info->physbase, VRAM_ADDR, info->pitch * info->Yres);
 
     printf("physbase: %x, bpp: %u, pitch: %u\n", info->physbase, info->bpp, info->pitch);
-    
+
     // volatile uint32_t* vram = (volatile uint32_t*)(info->physbase);
-    volatile uint32_t* vram = (volatile uint32_t*)(0xa0000);
+    volatile uint8_t* vram = (volatile uint8_t*)(0xa0000);
     // volatile uint32_t* vram = (volatile uint32_t*)(0xE0000000);
     printf("vram    -> %x\n", vram);
-    vram[0] = 0xffffffff;
+
+    init_graphics((uint8_t*)0xa0000, info);
+
+    // graphics_fillrect(100, 100, 150, 150, 0xffffff);
+    //
+    printf("xres=%x\n", info->Xres);
+    printf("yres=%x\n", info->Yres);
+
+    for (int j = 0; j < 20; j++)
+    {
+        for (int i = 0; i < 20; i++)
+        {
+            vram[ j*info->pitch + i*3] = 0xff;
+        }
+    }
+
+    // vram[0] = 0xffffffff;
     printf("vram[0] == %x\n", vram[0]);
-    
+    printf("vram[1] == %x\n", vram[1]);
     // hexdump(vram, 32, printf);
 
     for (;;)
-    {   
+    {
         asm("hlt");
     }
     return;
