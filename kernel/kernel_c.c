@@ -168,28 +168,82 @@ void __attribute__((cdecl)) kernel_main(volatile struct VesaModeInfo* info)
     printf("physbase: %x, bpp: %u, pitch: %u\n", info->physbase, info->bpp, info->pitch);
 
     // volatile uint32_t* vram = (volatile uint32_t*)(info->physbase);
-    volatile uint8_t* vram = (volatile uint8_t*)(0xa0000);
+    // volatile uint8_t* vram = (volatile uint8_t*)(info->physbase);
     // volatile uint32_t* vram = (volatile uint32_t*)(0xE0000000);
-    printf("vram    -> %x\n", vram);
+    // printf("vram    -> %x\n", vram);
 
-    init_graphics((uint8_t*)0xa0000, info);
+    init_graphics(info);
 
-    // graphics_fillrect(100, 100, 150, 150, 0xffffff);
-    //
-    printf("xres=%x\n", info->Xres);
-    printf("yres=%x\n", info->Yres);
+    graphics_fillrect(100, 100, 100, 150, 0xa0fefd);
 
-    for (int j = 0; j < 20; j++)
-    {
-        for (int i = 0; i < 20; i++)
+    PixelMap H = (PixelMap){
         {
-            vram[ j*info->pitch + i*3] = 0xff;
-        }
-    }
+            1,0,0,0,0,0,1,0,
+            1,0,0,0,0,0,1,0,
+            1,0,0,0,0,0,1,0,
+            1,1,1,1,1,1,1,0,
+            1,0,0,0,0,0,1,0,
+            1,0,0,0,0,0,1,0,
+            1,0,0,0,0,0,1,0,
+            0,0,0,0,0,0,0,0,
+        } };
+    PixelMap E = (PixelMap){
+        {
+            1,1,1,1,1,1,1,0,
+            1,0,0,0,0,0,0,0,
+            1,0,0,0,0,0,0,0,
+            1,1,1,1,1,1,1,0,
+            1,0,0,0,0,0,0,0,
+            1,0,0,0,0,0,0,0,
+            1,1,1,1,1,1,1,0,
+            0,0,0,0,0,0,0,0,
+        } };
+    PixelMap L = (PixelMap){
+        {
+            1,0,0,0,0,0,0,0,
+            1,0,0,0,0,0,0,0,
+            1,0,0,0,0,0,0,0,
+            1,0,0,0,0,0,0,0,
+            1,0,0,0,0,0,0,0,
+            1,0,0,0,0,0,0,0,
+            1,1,1,1,1,1,1,0,
+            0,0,0,0,0,0,0,0,
+        } };
+    PixelMap O = (PixelMap){
+        {
+            0,0,1,1,1,0,0,0,
+            0,1,0,0,0,1,0,0,
+            1,0,0,0,0,0,1,0,
+            1,0,0,0,0,0,1,0,
+            1,0,0,0,0,0,1,0,
+            0,1,0,0,0,1,0,0,
+            0,0,1,1,1,0,0,0,
+            0,0,0,0,0,0,0,0,
+        } };
+
+    graphics_draw_pixelmap(H, 0xffffff);
+    graphics_draw_pixelmap(E, 0xffffff);
+    graphics_draw_pixelmap(L, 0xffffff);
+    graphics_draw_pixelmap(L, 0xffffff);
+    graphics_draw_pixelmap(O, 0xffffff);
+
+
+    //
+    printf("xres=%i\n", info->Xres);
+    printf("yres=%i\n", info->Yres);
+
+    // graphics_fillrect(0,0,20,20,0xa0fefd);
+    // for (uint32_t j = 0; j < 20; j++)
+    // {
+    //     for (uint32_t i = 0; i < 20; i++)
+    //     {
+    //         *(uint32_t*)(info->physbase + j*info->pitch + i*info->bpp/8) = 0xa0fefd;
+    //     }
+    // }
 
     // vram[0] = 0xffffffff;
-    printf("vram[0] == %x\n", vram[0]);
-    printf("vram[1] == %x\n", vram[1]);
+    // printf("vram[0] == %x\n", vram[0]);
+    // printf("vram[1] == %x\n", vram[1]);
     // hexdump(vram, 32, printf);
 
     for (;;)

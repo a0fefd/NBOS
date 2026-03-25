@@ -188,14 +188,15 @@ load_kernel:
     int 0x10
     cmp ax, 0x004F
     jne .hang
-    
-    mov ax, 0x4F01
+
+    ; mov ax, 0x4F01
     ; mov cx, 0x4118
     mov cx, 274
     mov di, vesa_mode_info
     push es
     mov ax, 0
     mov es, ax
+    mov ax, 0x4F01
     int 0x10
     cmp ax, 0x004F
     jne .hang

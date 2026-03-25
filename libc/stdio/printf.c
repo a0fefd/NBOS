@@ -27,13 +27,13 @@ void printf_unsigned(uint32_t number, int radix)
     int pos = 0;
 
     // convert number to ASCII
-    do 
+    do
     {
-        
+
         uint32_t rem = number % radix;
         number /= radix;
         buffer[pos++] = g_HexChars[rem];
-        
+
     } while (number > 0);
 
     // print number in reverse order
@@ -126,7 +126,7 @@ void printf(const char* fmt, ...)
                     case 'c':   stdio_putc((char)va_arg(args, int));
                                 break;
 
-                    case 's':   
+                    case 's':
                                 print(va_arg(args, const char*));
                                 break;
 
@@ -178,7 +178,7 @@ void printf(const char* fmt, ...)
                         case PRINTF_LENGTH_SHORT:
                         case PRINTF_LENGTH_DEFAULT:     printf_unsigned(va_arg(args, unsigned int), radix);
                                                         break;
-                                                        
+
                         case PRINTF_LENGTH_LONG:        printf_unsigned(va_arg(args, unsigned  long), radix);
                                                         break;
 
@@ -206,7 +206,7 @@ void printf(const char* fmt, ...)
 void print_buffer(const char* msg, const void* buffer, uint32_t count)
 {
     const uint8_t* u8Buffer = (const uint8_t*)buffer;
-    
+
     print(msg);
     for (uint16_t i = 0; i < count; i++)
     {

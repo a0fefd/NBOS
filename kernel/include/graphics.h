@@ -3,10 +3,22 @@
 #include "vga.h"
 #include "kernel.h"
 
-void init_graphics(uint8_t* vram_addr, struct VesaModeInfo* vesa_info_ptr);
+#define PIXELMAP_SIZE 8
 
-void graphics_fillrect(size_t x, size_t y, size_t w, size_t h, uint32_t colour);
+typedef struct pixelmap_st {
+    uint8_t pixels[PIXELMAP_SIZE*PIXELMAP_SIZE];
+} PixelMap;
+
+void init_graphics(struct VesaModeInfo* vesa_info_ptr);
+void init_graphics_addr(uint32_t vram_addr, struct VesaModeInfo* vesa_info_ptr);
+
+void graphics_putpixel(uint32_t x, uint32_t y, uint32_t colour);
+
+void graphics_fillrect(uint32_t x, uint32_t y, uint32_t w, uint32_t h, uint32_t colour);
 // void graphics_fillrect_vga(size_t x, size_t y, size_t w, size_t h, VGA_COLOUR colour);
 void graphics_fillrect_vga(size_t x, size_t y, size_t w, size_t h, uint8_t colour);
 
+void graphics_draw_pixelmap(PixelMap map, uint32_t colour);
+
 void graphics_clrscr();
+void graphics_clrscr_vga();
