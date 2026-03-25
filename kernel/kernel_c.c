@@ -145,6 +145,9 @@ void __attribute__((cdecl)) kernel_main(volatile struct VesaModeInfo* info)
 
     // i686_pic_mask(0);
     i686_irq_registerhandler(0, timer_handler);
+
+    init_graphics(info);
+
     i686_irq_registerhandler(1, keyboard_main);
     // i686_irq_registerhandler(1, keyboard_main);
 
@@ -172,61 +175,7 @@ void __attribute__((cdecl)) kernel_main(volatile struct VesaModeInfo* info)
     // volatile uint32_t* vram = (volatile uint32_t*)(0xE0000000);
     // printf("vram    -> %x\n", vram);
 
-    init_graphics(info);
-
-    graphics_fillrect(100, 100, 100, 150, 0xa0fefd);
-
-    PixelMap H = (PixelMap){
-        {
-            1,0,0,0,0,0,1,0,
-            1,0,0,0,0,0,1,0,
-            1,0,0,0,0,0,1,0,
-            1,1,1,1,1,1,1,0,
-            1,0,0,0,0,0,1,0,
-            1,0,0,0,0,0,1,0,
-            1,0,0,0,0,0,1,0,
-            0,0,0,0,0,0,0,0,
-        } };
-    PixelMap E = (PixelMap){
-        {
-            1,1,1,1,1,1,1,0,
-            1,0,0,0,0,0,0,0,
-            1,0,0,0,0,0,0,0,
-            1,1,1,1,1,1,1,0,
-            1,0,0,0,0,0,0,0,
-            1,0,0,0,0,0,0,0,
-            1,1,1,1,1,1,1,0,
-            0,0,0,0,0,0,0,0,
-        } };
-    PixelMap L = (PixelMap){
-        {
-            1,0,0,0,0,0,0,0,
-            1,0,0,0,0,0,0,0,
-            1,0,0,0,0,0,0,0,
-            1,0,0,0,0,0,0,0,
-            1,0,0,0,0,0,0,0,
-            1,0,0,0,0,0,0,0,
-            1,1,1,1,1,1,1,0,
-            0,0,0,0,0,0,0,0,
-        } };
-    PixelMap O = (PixelMap){
-        {
-            0,0,1,1,1,0,0,0,
-            0,1,0,0,0,1,0,0,
-            1,0,0,0,0,0,1,0,
-            1,0,0,0,0,0,1,0,
-            1,0,0,0,0,0,1,0,
-            0,1,0,0,0,1,0,0,
-            0,0,1,1,1,0,0,0,
-            0,0,0,0,0,0,0,0,
-        } };
-
-    graphics_draw_pixelmap(H, 0xffffff);
-    graphics_draw_pixelmap(E, 0xffffff);
-    graphics_draw_pixelmap(L, 0xffffff);
-    graphics_draw_pixelmap(L, 0xffffff);
-    graphics_draw_pixelmap(O, 0xffffff);
-
+    // graphics_fillrect(100, 100, 100, 150, 0xa0fefd);
 
     //
     printf("xres=%i\n", info->Xres);

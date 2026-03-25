@@ -1,4 +1,5 @@
 #include "include/keyboard.h"
+#include "include/graphics.h"
 #include "i686/include/idt.h"
 #include "i686/include/io.h"
 #include "i686/include/pic.h"
@@ -34,5 +35,10 @@ char kbd_US[128] = {
 
 void keyboard_main() {
     uint8_t scancode = i686_inb(KEYBOARD_DATA_PORT);
-    // i686_pic_sendeoi(1);
+    if (scancode == 14)
+        graphics_backspace_pixelmap();
+    else if (scancode < 128)
+        graphics_draw_pixelmap(kbd_pixelmaps[scancode], 0xffffff);
+
+    i686_pic_sendeoi(1);
 }
