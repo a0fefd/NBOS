@@ -7,12 +7,16 @@
 #define BUFFER_SIZE 256
 
 extern char kbd_US[128];
+extern char kbd_US_lookup[128];
+extern int16_t kbd_US_shift_table[128];
+extern uint8_t shift;
+extern uint8_t typed;
 
 typedef struct KEY_EVENT_ST {
     uint8_t code;
 } KEY_EVENT;
 
-// void keyboard_init();
+void init_keyboard();
 void keyboard_main();
 
 #endif

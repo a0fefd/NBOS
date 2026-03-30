@@ -147,6 +147,7 @@ void __attribute__((cdecl)) kernel_main(volatile struct VesaModeInfo* info)
     i686_irq_registerhandler(0, timer_handler);
 
     init_graphics(info);
+    init_keyboard();
 
     i686_irq_registerhandler(1, keyboard_main);
     // i686_irq_registerhandler(1, keyboard_main);
@@ -168,7 +169,7 @@ void __attribute__((cdecl)) kernel_main(volatile struct VesaModeInfo* info)
 
     // enable_paging(info->physbase, VRAM_ADDR, info->pitch * info->Yres);
 
-    printf("physbase: %x, bpp: %u, pitch: %u\n", info->physbase, info->bpp, info->pitch);
+    // printf("physbase: %x, bpp: %u, pitch: %u\n", info->physbase, info->bpp, info->pitch);
 
     // volatile uint32_t* vram = (volatile uint32_t*)(info->physbase);
     // volatile uint8_t* vram = (volatile uint8_t*)(info->physbase);
@@ -178,8 +179,11 @@ void __attribute__((cdecl)) kernel_main(volatile struct VesaModeInfo* info)
     // graphics_fillrect(100, 100, 100, 150, 0xa0fefd);
 
     //
-    printf("xres=%i\n", info->Xres);
-    printf("yres=%i\n", info->Yres);
+    // printf("xres=%i\n", info->Xres);
+    // printf("yres=%i\n", info->Yres);
+
+    // printf("Hello, world!@#$%^&*()_+\n");
+    printf("Hello, world!\n");
 
     // graphics_fillrect(0,0,20,20,0xa0fefd);
     // for (uint32_t j = 0; j < 20; j++)

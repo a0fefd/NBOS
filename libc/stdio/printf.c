@@ -4,11 +4,39 @@
 #include "../include/string.h"
 #include "../include/stdio.h"
 #include "../../kernel/i686/include/io.h"
+#include "../../kernel/include/graphics.h"
+#include "../../kernel/include/keyboard.h"
+
+#define is_graphic_io 2 // 0 for console, 1 for graphic, 2 for both
 
 static char stdio_putc(const char c)
 {
-    while (!((i686_inb(0x3f8 + 5)) & 0x20));
-    i686_outb(0x3f8, c);
+    char check;
+    char nchar = c;
+    uint8_t shift_switch = 0;
+    if (typed) { shift_switch = shift;}
+    if (kbd_US_shift_table[c] != 0)
+    {
+        nchar = (char)((uint8_t)c+kbd_US_shift_table[c]);
+        shift_switch = 1;
+    }
+    switch (is_graphic_io)
+    {
+        case 2:
+        case 1:
+            if ((check = kbd_US_lookup[nchar]))
+            {
+                graphics_draw_pixelmap(kbd_pixelmaps[check + (shift_switch ? 128 : 0)], 0xffffff);
+            }
+            if (is_graphic_io == 1) break;
+        case 0:
+        default:
+            while (!((i686_inb(0x3f8 + 5)) & 0x20));
+            // i686_outb(0x3f8, nchar+(shift_switch ? kbd_US_shift_table[c] : 0));
+            i686_outb(0x3f8, c);
+            break;
+
+    }
     return c;
 }
 static bool print(const char* data) {

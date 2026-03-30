@@ -9,7 +9,7 @@ typedef struct pixelmap_st {
     uint8_t pixels[PIXELMAP_SIZE*PIXELMAP_SIZE];
 } PixelMap;
 
-extern PixelMap kbd_pixelmaps[128];
+extern PixelMap kbd_pixelmaps[256];
 
 void init_graphics(struct VesaModeInfo* vesa_info_ptr);
 void init_graphics_addr(uint32_t vram_addr, struct VesaModeInfo* vesa_info_ptr);
