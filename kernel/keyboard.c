@@ -4,6 +4,7 @@
 #include "i686/include/io.h"
 #include "i686/include/pic.h"
 #include "../libc/include/stdio.h"
+#include "include/kernel.h"
 
 uint8_t shift = 0;
 uint8_t typed = 0;
@@ -107,7 +108,7 @@ int16_t kbd_US_shift_table[128] = {
 
 void init_keyboard() {
     typed = 0; shift = 0;
-    for (int i = 'A' - 1; i < 'Z'; i++)
+    for (int i = 'A'; i < 'Z'+1; i++)
     {
         kbd_US_shift_table[i] = 32;
         // kbd_US_shift_table[i+32] = -32;
@@ -121,6 +122,10 @@ void keyboard_main() {
         shift = !shift;
     else if (scancode == 14)
         graphics_backspace_pixelmap();
+    else if (scancode == 29)
+    {
+        kernel_power_off();
+    }
     else if (scancode < 128 )
     {
         printf("%c", kbd_US[scancode]);

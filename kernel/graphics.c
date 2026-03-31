@@ -3,6 +3,17 @@
 
 PixelMap kbd_pixelmaps[256] = {
 
+    [0] = (PixelMap){{
+        0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,
+        1,1,1,1,1,1,1,0,
+        0,0,0,0,0,0,0,0,
+    }},
+
     /* ================================================================
     ** layer 0: no-caps (0x00–0x7F)
     ** ================================================================ */
@@ -597,14 +608,24 @@ PixelMap kbd_pixelmaps[256] = {
         0,0,1,0,0,0,0,0,
         0,0,0,0,0,0,0,0,
     }},
-    [134] = (PixelMap){{    /* '%' */
-        0,1,0,0,0,0,1,0,
-        1,0,1,0,0,1,0,0,
-        0,1,0,0,1,0,0,0,
-        0,0,0,1,0,0,0,0,
-        0,0,1,0,0,1,0,0,
-        0,1,0,0,1,0,1,0,
-        1,0,0,0,0,1,0,0,
+    // [134] = (PixelMap){{    /* '%' */
+    //     0,1,0,0,0,0,1,0,
+    //     1,0,1,0,0,1,0,0,
+    //     0,1,0,0,1,0,0,0,
+    //     0,0,0,1,0,0,0,0,
+    //     0,0,1,0,0,1,0,0,
+    //     0,1,0,0,1,0,1,0,
+    //     1,0,0,0,0,1,0,0,
+    //     0,0,0,0,0,0,0,0,
+    // }},
+    [137] = (PixelMap){{    /* '&' */
+        0,0,1,0,0,0,0,0,
+        0,1,0,1,0,0,0,0,
+        0,0,1,0,0,0,0,0,
+        0,1,0,1,0,1,0,0,
+        1,0,0,0,1,0,0,0,
+        1,0,0,1,0,1,0,0,
+        0,1,1,0,0,1,0,0,
         0,0,0,0,0,0,0,0,
     }},
 
@@ -888,12 +909,22 @@ static uint16_t pitch = 0;
 static uint8_t bpp = 0;
 // static size_t SCREEN_AREA  = 320*300;
 
-struct VesaModeInfo* _vesa_info_ptr;
+volatile struct VesaModeInfo* _vesa_info_ptr;
 
 static size_t cursorx = 0;
 static size_t cursory = 0;
 
-void init_graphics(struct VesaModeInfo* vesa_info_ptr)
+static uint32_t foreground_colour = 0xffffff;
+uint32_t get_fg_colour()
+{
+    return foreground_colour;
+}
+void set_fg_colour(uint32_t colour)
+{
+    foreground_colour = colour;
+}
+
+void init_graphics(volatile struct VesaModeInfo* vesa_info_ptr)
 {
     _vesa_info_ptr = vesa_info_ptr;
     framebuffer = vesa_info_ptr->physbase;
@@ -906,7 +937,7 @@ void init_graphics(struct VesaModeInfo* vesa_info_ptr)
     bpp = vesa_info_ptr->bpp;
 }
 
-void init_graphics_addr(uint32_t vram_addr, struct VesaModeInfo* vesa_info_ptr)
+void init_graphics_addr(uint32_t vram_addr, volatile struct VesaModeInfo* vesa_info_ptr)
 {
     init_graphics(vesa_info_ptr);
     framebuffer = vram_addr;
@@ -915,6 +946,10 @@ void init_graphics_addr(uint32_t vram_addr, struct VesaModeInfo* vesa_info_ptr)
 void graphics_putpixel(uint32_t x, uint32_t y, uint32_t colour)
 {
     *(uint32_t*)(framebuffer + y*pitch + x*bpp/8) = colour;
+}
+uint32_t graphics_getpixel(uint32_t x, uint32_t y)
+{
+    return *(uint32_t*)(framebuffer + y*pitch + x*bpp/8);
 }
 
 void graphics_fillrect(uint32_t x, uint32_t y, uint32_t w, uint32_t h, uint32_t colour)
@@ -946,6 +981,8 @@ void graphics_draw_pixelmap(PixelMap map, uint32_t colour)
         {
             if (map.pixels[PIXELMAP_SIZE*j + i])
                 graphics_putpixel(cursorx * PIXELMAP_SIZE + i, cursory * PIXELMAP_SIZE + j, colour);
+            else
+                graphics_putpixel(cursorx * PIXELMAP_SIZE + i, cursory * PIXELMAP_SIZE + j, 0);
         }
     cursorx++;
     // printf("cursor: %i ", cursorx);
@@ -958,6 +995,9 @@ void graphics_draw_pixelmap(PixelMap map, uint32_t colour)
 }
 void graphics_backspace_pixelmap()
 {
+    for (int j = 0; j < PIXELMAP_SIZE; j++)
+        for (int i = 0; i < PIXELMAP_SIZE; i++)
+            graphics_putpixel(cursorx * PIXELMAP_SIZE + i, cursory * PIXELMAP_SIZE + j, 0);
     if (cursorx == 0)
     {
         if (cursory > 0)
@@ -971,6 +1011,40 @@ void graphics_backspace_pixelmap()
     for (int j = 0; j < PIXELMAP_SIZE; j++)
         for (int i = 0; i < PIXELMAP_SIZE; i++)
             graphics_putpixel(cursorx * PIXELMAP_SIZE + i, cursory * PIXELMAP_SIZE + j, 0);
+
+    if (cursorx > 0)
+    {
+        uint8_t check = 0;
+        size_t _cursorx = cursorx;
+        size_t _cursory = cursory;
+        if (_cursorx == 0)
+        {
+            if (_cursory > 0)
+            {
+                _cursory--;
+                _cursorx = SCREEN_W/PIXELMAP_SIZE - 1;
+            }
+        } else {
+            _cursorx--;
+        }
+        for (int j = 0; j < PIXELMAP_SIZE; j++)
+            for (int i = 0; i < PIXELMAP_SIZE; i++)
+            {
+                if (graphics_getpixel(_cursorx * PIXELMAP_SIZE + i, _cursory * PIXELMAP_SIZE + j) != 0)
+                    check = 1;
+            }
+        if (check == 0)
+            graphics_backspace_pixelmap();
+    }
+}
+void graphics_return_pixelmap()
+{
+    for (int j = 0; j < PIXELMAP_SIZE; j++)
+        for (int i = 0; i < PIXELMAP_SIZE; i++)
+        {
+            graphics_putpixel(cursorx * PIXELMAP_SIZE + i, cursory * PIXELMAP_SIZE + j, 0);
+        }
+    cursorx = 0; cursory++;
 }
 
 void graphics_clrscr()

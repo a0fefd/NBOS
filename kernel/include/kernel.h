@@ -41,4 +41,6 @@ struct __attribute__((packed)) VesaModeInfo{
 
 void __attribute__((cdecl)) kernel_main(volatile struct VesaModeInfo* info);
 
+void kernel_power_off();
+
 #endif

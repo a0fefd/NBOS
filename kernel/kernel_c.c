@@ -40,6 +40,12 @@ void kernel_init()
 //     printf("%c", kbd_US[scancode]);
 // }
 
+static uint8_t on = 1;
+void kernel_power_off()
+{
+    on = 0;
+}
+
 float t = 0.0f;
 float dt = 55.0f/1000.0f;
 
@@ -122,86 +128,32 @@ void hexdump_full(uint8_t* ptr, void (*__func_printf)(const char* str, ...))
     hexdump(ptr, sizeof(*ptr), __func_printf);
 }
 
-#define VRAM_ADDR 0xe0000000
+// #define VRAM_ADDR 0xe0000000
 void __attribute__((cdecl)) kernel_main(volatile struct VesaModeInfo* info)
 {
     memset(&__bss_start, 0, (&__end) - (&__bss_start));
 
     kernel_init();
 
-    // vga_set_palette_entry(0, 0, 0, 0);
-    // for (int i = 1; i < 64; i++)
-    //     vga_set_palette_entry(i, (float)i/63.0f * 255, 0, 0);
-    // for (int i = 64; i < 128; i++)
-    //     vga_set_palette_entry(i, 0, (float)(i-63)/63.0f * 255, 0);
-    // for (int i = 128; i < 192; i++)
-    //     vga_set_palette_entry(i, 0, 0, (float)(i-127)/63.0f * 255);
-    // for (int i = 1; i < 64; i++)
-    // {
-    //     uint8_t c = (float)i/63.0f * 255;
-    //     vga_set_palette_entry(i+191, c, c, c);
-    // }
-
-
-    // i686_pic_mask(0);
     i686_irq_registerhandler(0, timer_handler);
 
     init_graphics(info);
     init_keyboard();
 
     i686_irq_registerhandler(1, keyboard_main);
-    // i686_irq_registerhandler(1, keyboard_main);
-
-    // text mode not graphics
-    // terminal_init(VGA_COLOUR_WHITE, VGA_COLOUR_BLACK);
 
     /* Program Start */
-    // printf("Welcome to NBOS!\n");
+    printf("ABCDEFGHIJKLMNOPQRSTUVWXYZ\nabcdefghijklmnopqrstuvwxyz\n!@#$%^&*()_+\n\n");
+    set_fg_colour(0xa0fefd);
+    printf("Welcome to NBOS!\n");
+    set_fg_colour(0xffffff);
 
-    // graphics_fillrect(20, 20, 5, 5, graphics_colour(255, 0, 0));
-
-    // for (int i = 0; i < 256; i++)
-    // {
-    //     // graphics_fillrect_vga(i, 0, 1, SCREEN_H, i);
-    //     graphics_fillrect(i, 0, 0, SCREEN_H, graphics_colour(0, i, i));
-    // }
-
-
-    // enable_paging(info->physbase, VRAM_ADDR, info->pitch * info->Yres);
-
-    // printf("physbase: %x, bpp: %u, pitch: %u\n", info->physbase, info->bpp, info->pitch);
-
-    // volatile uint32_t* vram = (volatile uint32_t*)(info->physbase);
-    // volatile uint8_t* vram = (volatile uint8_t*)(info->physbase);
-    // volatile uint32_t* vram = (volatile uint32_t*)(0xE0000000);
-    // printf("vram    -> %x\n", vram);
-
-    // graphics_fillrect(100, 100, 100, 150, 0xa0fefd);
-
-    //
-    // printf("xres=%i\n", info->Xres);
-    // printf("yres=%i\n", info->Yres);
-
-    // printf("Hello, world!@#$%^&*()_+\n");
-    printf("Hello, world!\n");
-
-    // graphics_fillrect(0,0,20,20,0xa0fefd);
-    // for (uint32_t j = 0; j < 20; j++)
-    // {
-    //     for (uint32_t i = 0; i < 20; i++)
-    //     {
-    //         *(uint32_t*)(info->physbase + j*info->pitch + i*info->bpp/8) = 0xa0fefd;
-    //     }
-    // }
-
-    // vram[0] = 0xffffffff;
-    // printf("vram[0] == %x\n", vram[0]);
-    // printf("vram[1] == %x\n", vram[1]);
-    // hexdump(vram, 32, printf);
-
-    for (;;)
+    while (on)
     {
         asm("hlt");
     }
+
+    // outw(0x604, 0x2000);
+
     return;
 }

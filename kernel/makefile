@@ -1,6 +1,6 @@
 include ../toolchain.mk
 
-CFLAGS = -std=gnu11 -ffreestanding -O2 -g -Wall -Wextra -Wno-unused-variable
+CFLAGS = -std=gnu11 -ffreestanding -O2 -g -Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-int-in-bool-context
 
 BUILD_PATH_KRNL = ../build/kernel
 

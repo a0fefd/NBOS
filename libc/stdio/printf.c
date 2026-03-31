@@ -14,25 +14,26 @@ static char stdio_putc(const char c)
     char check;
     char nchar = c;
     uint8_t shift_switch = 0;
-    if (typed) { shift_switch = shift;}
-    if (kbd_US_shift_table[c] != 0)
+    if (typed) { shift_switch = shift; }
+    if (kbd_US_shift_table[(uint8_t)c] != 0)
     {
-        nchar = (char)((uint8_t)c+kbd_US_shift_table[c]);
+        nchar = (char)(c+kbd_US_shift_table[(uint8_t)c]);
         shift_switch = 1;
     }
     switch (is_graphic_io)
     {
         case 2:
         case 1:
-            if ((check = kbd_US_lookup[nchar]))
+            if (c == '\n') graphics_return_pixelmap();
+            else if ((check = kbd_US_lookup[(uint8_t)nchar]))
             {
-                graphics_draw_pixelmap(kbd_pixelmaps[check + (shift_switch ? 128 : 0)], 0xffffff);
+                graphics_draw_pixelmap(kbd_pixelmaps[check + (shift_switch ? 128 : 0)], get_fg_colour());
             }
             if (is_graphic_io == 1) break;
         case 0:
         default:
             while (!((i686_inb(0x3f8 + 5)) & 0x20));
-            // i686_outb(0x3f8, nchar+(shift_switch ? kbd_US_shift_table[c] : 0));
+            // i686_outb(0x3f8, c+(shift_switch ? kbd_US_shift_table[c] : 0));
             i686_outb(0x3f8, c);
             break;
 
